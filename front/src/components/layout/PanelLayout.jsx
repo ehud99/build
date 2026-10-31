@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 
 import { AccountMenu } from '@/components/layout/AccountMenu.jsx';
+import { RealLogo } from '@/components/brand/RealLogo.jsx';
 import { ThemeSwitch } from '@/components/layout/ThemeSwitch.jsx';
 import { revealFromCapsule } from '@/lib/capsuleReveal.js';
 import { MODULES } from '@/modules/registry.js';
@@ -21,13 +22,11 @@ function useIsDesktop() {
   );
 }
 
-/** Logo «Real»: cuadrado redondeado con la R y el nombre. */
+/** Logo «Real»: el Cthulhu con alas en pixel art y el nombre. */
 function Logo() {
   return (
     <div className="flex items-center gap-2" data-testid="logo">
-      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent text-lg font-bold text-accent-fg">
-        R
-      </span>
+      <RealLogo size={32} />
       <span className="text-lg font-semibold tracking-tight">Real</span>
     </div>
   );
