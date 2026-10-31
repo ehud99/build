@@ -18,7 +18,14 @@ suyo (`user_id`). Backend **FastAPI + SQLAlchemy + PostgreSQL + Alembic** en `ba
 
 v1: inicio público y Dashboard «En desarrollo»; registro con clave de invitación; login de dos
 pantallas; Objetivos del mes (hasta 10, solo se marca hoy, meses pasados de solo lectura, «Copiar
-mes anterior»); tema claro y oscuro con efecto glitch (`front/src/lib/glitch.js`).
+mes anterior», rachas por casilla y la fila en llamas del mes completo, recomendaciones en el
+campo del objetivo nuevo); tema claro y oscuro con efecto glitch (`front/src/lib/glitch.js`).
+
+## Skills del proyecto
+
+- `/frmecommit`: commit, versión de `front/package.json` y push en un paso (`.claude/skills/frmecommit/`).
+- `/real-suite`: la suite completa (pytest, unitarias, lint y Playwright) antes de desplegar
+  (`.claude/skills/real-suite/`).
 
 Próximos módulos: notas, tareas (probablemente junto al calendario), finanzas y un dashboard con
 los datos de todo.
@@ -37,4 +44,4 @@ los datos de todo.
 6. **Nunca `float` para dinero** (para cuando llegue finanzas): `Decimal` y `Numeric`.
 7. **forge es solo lectura** desde este proyecto: se copia de ahí, no se modifica.
 8. Antes de cada commit: `cd back && .venv/bin/pytest`, `cd front && npm test && npm run lint && npm run e2e`.
-   Commits en español con la forma de forge: `feat(alcance): …`.
+   Commits con `/frmecommit` (Conventional Commits en español, sin trailers).

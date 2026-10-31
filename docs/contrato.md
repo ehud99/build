@@ -95,6 +95,24 @@ Zona horaria de la app: `APP_TIMEZONE` (por defecto `America/Lima`). «Hoy» se 
 - **Puntaje del día** (columna): objetivos marcados ese día.
 - **Puntaje final**: suma de todas las marcas `/` objetivos × días del mes.
 
+### Rachas (las calcula el frontend, `modules/goals/score.js`)
+
+- La racha de una casilla marcada son los días seguidos marcados que terminan en ella (el primer
+  día vale 1). Cuentan dentro del mes de cada objetivo: «Copiar mes anterior» empieza de cero.
+- Nivel de la casilla (`streakLevel`): 1–6 días → 0 (la marca normal); 7 → 1 (un halo suave);
+  14 → 2 (dorado); 21 → 3 (rojo que parpadea); 30 → 4 (fuego rojo y azul).
+- Junto al título, la llama con la racha viva (la que termina hoy o, si hoy aún no se marcó,
+  ayer), desde 2 días, del color de su nivel.
+- **Mes completo** (todos los días marcados): la fila entera arde en rojo y azul.
+- Los colores son tokens (`--fire-red`, `--fire-blue`, `--fire-gold`) en claro y oscuro; con
+  `prefers-reduced-motion` no parpadean.
+
+### Recomendaciones del objetivo nuevo (`modules/goals/placeholders.js`)
+
+El placeholder del campo depende de cuántos objetivos tiene el mes: «Dormir 8 horas», «Hacer
+ejercicios», «Menos horas en redes sociales que ayer» y, desde el cuarto, «Nuevo objetivo». Con
+una probabilidad de 5 % sale «Tomar agua». Se elige una vez al abrir el campo.
+
 ## Rutas del frontend
 
 | Ruta | Pantalla |
@@ -105,8 +123,8 @@ Zona horaria de la app: `APP_TIMEZONE` (por defecto `America/Lima`). «Hoy» se 
 | `/inicio` | Panel › Dashboard: «En desarrollo» |
 | `/objetivos` | Panel › Objetivos: el calendario del mes |
 
-Panel: barra de íconos de vidrio a la izquierda en PC (Inicio `House`, Objetivos `CalendarDays`)
-y abajo en el celular; arriba el logo «Real» y el selector «Claro | Oscuro»; abajo a la
+Panel: barra de íconos de vidrio a la izquierda en PC, justo debajo del logo como en forge
+(Inicio `House`, Objetivos `CalendarDays`), y abajo en el celular; arriba el logo «Real» y el selector «Claro | Oscuro»; abajo a la
 izquierda el blobatar de la cuenta con su menú (nombre, @usuario, «Cerrar sesión»).
 
 ## Cambio de tema con glitch

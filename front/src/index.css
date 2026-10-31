@@ -24,6 +24,11 @@
   --success: oklch(0.55 0.11 155);
   --danger: oklch(0.55 0.18 28);
 
+  /* Rachas: fuego rojo y azul (el mes completo) y el dorado de los niveles intermedios. */
+  --fire-red: oklch(0.58 0.24 22);
+  --fire-blue: oklch(0.64 0.17 235);
+  --fire-gold: oklch(0.78 0.16 75);
+
   --glass: oklch(1 0 0 / 0.72);
   --shadow-md: 0 8px 24px -8px oklch(0 0 0 / 0.10), 0 2px 6px -2px oklch(0 0 0 / 0.05);
 
@@ -46,6 +51,10 @@
   --accent-fg: #1A0E08;
   --success: oklch(0.70 0.13 155);
   --danger: oklch(0.68 0.17 28);
+
+  --fire-red: oklch(0.68 0.22 22);
+  --fire-blue: oklch(0.74 0.15 230);
+  --fire-gold: oklch(0.84 0.15 80);
 
   --glass: oklch(0.22 0.01 80 / 0.72);
   --shadow-md: 0 10px 28px -6px oklch(0 0 0 / 0.50), 0 2px 8px -2px oklch(0 0 0 / 0.30);
@@ -133,4 +142,103 @@ body {
   backdrop-filter: blur(16px) saturate(1.4);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-md);
+}
+
+/* ===================================================================
+   Rachas de los objetivos (modules/goals/GoalsPage.jsx, `streakLevel`):
+   la casilla marcada se calienta cuanto más larga es la racha que termina
+   en ella. 0 (1–6 días) es la marca normal; 1 (7) un halo suave; 2 (14)
+   dorado; 3 (21) rojo que parpadea; 4 (30) fuego rojo y azul.
+   La fila de un mes completo arde con los dos colores.
+   =================================================================== */
+
+.streak-cell[data-level="1"] {
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 30%, transparent),
+    0 0 7px color-mix(in oklch, var(--accent) 55%, transparent);
+}
+.streak-cell[data-level="2"] {
+  border-color: var(--fire-gold);
+  background: linear-gradient(160deg, var(--fire-gold), var(--accent) 70%);
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--fire-gold) 35%, transparent),
+    0 -1px 10px color-mix(in oklch, var(--fire-gold) 70%, transparent);
+}
+.streak-cell[data-level="3"] {
+  border-color: var(--fire-red);
+  background: linear-gradient(160deg, var(--fire-gold), var(--accent) 35%, var(--fire-red) 85%);
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--fire-red) 35%, transparent),
+    0 -2px 13px color-mix(in oklch, var(--fire-red) 70%, transparent);
+  animation: streak-flicker 1.6s ease-in-out infinite;
+}
+.streak-cell[data-level="4"] {
+  border-color: var(--fire-blue);
+  background: linear-gradient(135deg, var(--fire-red), var(--fire-red) 35%, var(--fire-blue));
+  background-size: 200% 200%;
+  box-shadow: -3px -1px 11px color-mix(in oklch, var(--fire-red) 75%, transparent),
+    3px -1px 11px color-mix(in oklch, var(--fire-blue) 75%, transparent);
+  animation: streak-fire 2.4s ease-in-out infinite, streak-flicker 1.3s ease-in-out infinite;
+}
+
+@keyframes streak-flicker {
+  0%, 100% { filter: brightness(1); }
+  45% { filter: brightness(1.2) saturate(1.15); }
+  60% { filter: brightness(0.94); }
+}
+@keyframes streak-fire {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Contador de la racha junto al título. */
+.streak-badge { color: var(--text-faint); }
+.streak-badge[data-level="1"] { color: var(--accent); }
+.streak-badge[data-level="2"] { color: color-mix(in oklch, var(--fire-gold) 60%, var(--accent)); }
+.streak-badge[data-level="3"] { color: var(--fire-red); }
+.streak-badge[data-level="4"],
+.goal-row-fire .streak-badge {
+  color: var(--fire-red);
+  background: linear-gradient(90deg, var(--fire-red), var(--fire-blue));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.streak-badge[data-level="4"] svg,
+.goal-row-fire .streak-badge svg { stroke: var(--fire-blue); }
+
+/* La fila de un mes completo: una llama roja y azul de punta a punta. Cada celda pinta el mismo
+   degradado, del ancho de toda la fila (`--fire-n` columnas) y corrido a su columna (`--fire-i`),
+   así se ve continuo; el borde de la fila lleva los dos colores. La primera columna, fija al
+   desplazar, lleva su propia llama opaca. */
+.goal-row-fire > th,
+.goal-row-fire > td {
+  background-color: var(--surface);
+  box-shadow: inset 0 1px 0 color-mix(in oklch, var(--fire-red) 60%, transparent),
+    inset 0 -1px 0 color-mix(in oklch, var(--fire-blue) 60%, transparent);
+}
+.goal-row-fire > td {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in oklch, var(--fire-red) 58%, var(--surface)),
+    color-mix(in oklch, var(--fire-blue) 58%, var(--surface)) 25%,
+    color-mix(in oklch, var(--fire-red) 50%, var(--surface)) 50%,
+    color-mix(in oklch, var(--fire-blue) 58%, var(--surface)) 75%,
+    color-mix(in oklch, var(--fire-red) 58%, var(--surface))
+  );
+  background-size: calc(var(--fire-n, 1) * 100%) 100%;
+  background-position: calc(var(--fire-i, 0) / max(1, var(--fire-n, 1) - 1) * 100%) 0;
+}
+.goal-row-fire > th {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in oklch, var(--fire-red) 58%, var(--surface)),
+    color-mix(in oklch, var(--fire-red) 50%, var(--surface))
+  );
+  box-shadow: inset 3px 0 0 var(--fire-red),
+    inset 0 1px 0 color-mix(in oklch, var(--fire-red) 60%, transparent),
+    inset 0 -1px 0 color-mix(in oklch, var(--fire-blue) 60%, transparent);
+}
+.goal-row-fire { animation: streak-flicker 2.2s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .streak-cell[data-level],
+  .goal-row-fire { animation: none; }
 }

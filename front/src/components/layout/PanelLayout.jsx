@@ -75,7 +75,7 @@ function BarItem({ item }) {
 
 /**
  * Armazón del panel: arriba el logo y el selector de tema; la barra de íconos de vidrio a la
- * izquierda en PC (con la cuenta abajo) o flotando abajo en el celular (con la cuenta como último
+ * izquierda en PC, justo debajo del logo como en forge (con la cuenta abajo) o flotando abajo en el celular (con la cuenta como último
  * ítem); en medio, la pantalla del módulo (`<Outlet />`). La barra sale de `MODULES`.
  */
 export function PanelLayout() {
@@ -97,7 +97,8 @@ export function PanelLayout() {
         <>
           <nav
             aria-label="Módulos"
-            className="glass-panel fixed left-4 top-1/2 z-40 flex -translate-y-1/2 flex-col items-center gap-1 rounded-full p-1.5"
+            data-testid="nav-rail"
+            className="glass-panel fixed left-4 top-16 z-40 flex flex-col items-center gap-1 rounded-full p-1.5"
           >
             {MODULES.map((item) => (
               <RailItem key={item.key} item={item} />

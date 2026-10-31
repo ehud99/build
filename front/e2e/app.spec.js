@@ -61,11 +61,22 @@ test('registro, objetivos del mes, tema, salir y volver a entrar', async ({ page
   await registerUser(page, username, 'Luz');
   await expect(page.getByTestId('dashboard-under-construction')).toBeVisible();
 
+  // En PC la barra de módulos va justo debajo del logo, no a media pantalla.
+  const rail = page.getByTestId('nav-rail');
+  if (await rail.count()) {
+    const logo = await page.getByTestId('logo').boundingBox();
+    const box = await rail.boundingBox();
+    expect(box.y).toBeGreaterThan(logo.y + logo.height);
+    expect(box.y - (logo.y + logo.height)).toBeLessThan(32);
+  }
+
   // Objetivos: mes vacío → añadir dos.
   await page.getByTestId('nav-goals').click();
   await expect(page).toHaveURL(/\/objetivos/);
   await expect(page.getByTestId('goals-empty')).toBeVisible();
   await page.getByTestId('goal-add').click();
+  // El primer objetivo recomienda «Dormir 8 horas» (o, rara vez, «Tomar agua»).
+  await expect(page.getByTestId('goal-add-input')).toHaveAttribute('placeholder', /^(Dormir 8 horas|Tomar agua)$/);
   await page.getByTestId('goal-add-input').fill('Leer 20 min');
   await page.getByTestId('goal-add-input').press('Enter');
   await expect(page.getByTestId('goals-table')).toBeVisible();

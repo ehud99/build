@@ -43,6 +43,42 @@ export function shiftMonth(month, delta) {
   return `${y}-${String(mm).padStart(2, '0')}`;
 }
 
+/**
+ * Rachas: días seguidos marcados. La de una casilla marcada es la cantidad de días seguidos que
+ * terminan en ella (el primer día de una racha vale 1). Cuentan dentro del mes del objetivo.
+ */
+
+/** Umbrales de los niveles de racha: 1–6 → 0, 7–13 → 1, 14–20 → 2, 21–29 → 3, 30+ → 4. */
+export const STREAK_LEVELS = Object.freeze([7, 14, 21, 30]);
+
+/** `{día: racha}` de cada día marcado. */
+export function streaksByDay(checkedDays) {
+  const days = [...new Set(checkedDays ?? [])].sort((a, b) => a - b);
+  const out = {};
+  for (const day of days) out[day] = (out[day - 1] ?? 0) + 1;
+  return out;
+}
+
+/** Nivel de una racha de `n` días (0 no resalta; 4 desde 30 días). */
+export function streakLevel(n) {
+  return STREAK_LEVELS.filter((min) => n >= min).length;
+}
+
+/**
+ * Racha viva de un objetivo: la que termina hoy o, si hoy aún no se marcó, la que terminó ayer.
+ * `today` es el número del día (o `null` si no es el mes actual: entonces 0).
+ */
+export function currentStreak(goal, today) {
+  if (!today) return 0;
+  const streaks = streaksByDay(goal?.checked_days);
+  return streaks[today] ?? streaks[today - 1] ?? 0;
+}
+
+/** ¿Marcó todos los días del mes? */
+export function fullMonth(goal, daysInMonth) {
+  return daysInMonth > 0 && new Set(goal?.checked_days ?? []).size >= daysInMonth;
+}
+
 /** Número del día de `today` (`'2026-11-03'`) si cae en `month`; si no, `null`. */
 export function todayDay(month, today) {
   if (!month || !today) return null;
