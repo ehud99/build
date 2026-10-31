@@ -24,13 +24,13 @@
   --success: oklch(0.55 0.11 155);
   --danger: oklch(0.55 0.18 28);
 
-  /* Logo (components/brand/RealLogo.jsx): Cthulhu verde con alas moradas y ojos amarillos. */
+  /* Logo (components/brand/RealLogo.jsx): Cthulhu verde con alas de ángel y ojos amarillos. */
   --logo-ink: #1b1f1a;
   --logo-body: #4f9a5c;
   --logo-shade: #336e40;
   --logo-light: #8fd27e;
-  --logo-wing: #6c4a9e;
-  --logo-bone: #3d2860;
+  --logo-wing: #fbf8f0;
+  --logo-bone: #b9c4dc;
   --logo-eye: #ffcf3a;
   --logo-glint: #fff6c8;
 
@@ -65,7 +65,6 @@
     --danger: oklch(0.68 0.17 28);
 
     --logo-ink: #0b0d0a;
-    --logo-wing: #7d58b4;
 
     --fire-red: oklch(0.68 0.22 22);
     --fire-blue: oklch(0.74 0.15 230);

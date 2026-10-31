@@ -1,30 +1,30 @@
 /**
- * El logo de Real: un Cthulhu con alas en pixel art de 16 × 16 (cabeza de pulpo, ojos que brillan,
- * alas de murciélago con sus huesos y tentáculos de barba). Se dibuja desde `PIXELS` con un
- * `<rect>` por tramo de color y `shape-rendering="crispEdges"`, así queda nítido en 16, 32 o
- * 64 px. Los colores son tokens (`--logo-*` en `index.css`); el favicon (`public/favicon.svg`)
+ * El logo de Real: un Cthulhu con alas de ángel en pixel art de 22 × 16 (cabeza de pulpo, ojos que
+ * brillan, alas de plumas blancas y tentáculos de barba). Se dibuja desde `PIXELS` con un `<rect>`
+ * por tramo de color y `shape-rendering="crispEdges"`, así queda nítido en 16, 32 o 64 px de alto
+ * (`size` es la altura; el ancho sale de la proporción 22 : 16). Los colores son tokens (`--logo-*` en `index.css`); el favicon (`public/favicon.svg`)
  * es el mismo dibujo con colores fijos.
  *
- * `.` vacío · `O` contorno · `B` cuerpo · `D` sombra · `L` brillo · `W` ala · `V` hueso del ala ·
+ * `.` vacío · `O` contorno · `B` cuerpo · `D` sombra · `L` brillo · `W` pluma · `V` sombra de la pluma ·
  * `E` ojo · `e` brillo del ojo.
  */
 const PIXELS = Object.freeze([
-  '......OOOO......',
-  '.....OBLLBO.....',
-  'O...OBLBBBBO...O',
-  'VO..OBBBBBBO..OV',
-  'WVO.OBBBBBDO.OVW',
-  'WVVOOBBBBBDOOVVW',
-  'VWWVOEeBBEeOVWWV',
-  'WVWWOEEBBEEOWWVW',
-  'OWVWOBBBBBDOWVWO',
-  '.OOVOBDBBDDOVOO.',
-  '...OOBOBBOBDOO..',
-  '...OBOOBDOOBDO..',
-  '...OBO.OBO.OBO..',
-  '..OBO..OBO..OBO.',
-  '..OO..OBO....OO.',
-  '......OO........',
+  'OO.......OOOO.......OO',
+  'OWOO....OBLLBO....OOWO',
+  'OWWWOO.OBLBBBBO.OOWWWO',
+  'OVWWWWOOBBBBBBOOWWWWVO',
+  '.OVWWWWOBBBBBDOWWWWVO.',
+  '.OWVVWWOBBBBBDOWWVVWO.',
+  '..OVWVWOEeBBEeOWVWVO..',
+  '..OOWVWOEEBBEEOWVWOO..',
+  '...OOVWOBBBBBDOWVOO...',
+  '....OOOOBDBBDDOOOO....',
+  '......OOBOBBOBDOO.....',
+  '......OBOOBDOOBDO.....',
+  '......OBO.OBO.OBO.....',
+  '.....OBO..OBO..OBO....',
+  '.....OO..OBO....OO....',
+  '.........OO...........',
 ]);
 
 const FILL = {
@@ -55,8 +55,8 @@ const RUNS = PIXELS.flatMap((row, y) => {
 export function RealLogo({ size = 32, className = '', title }) {
   return (
     <svg
-      viewBox="0 0 16 16"
-      width={size}
+      viewBox="0 0 22 16"
+      width={Math.round((size * 22) / 16)}
       height={size}
       shapeRendering="crispEdges"
       className={className}
