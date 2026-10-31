@@ -376,6 +376,87 @@ def list_transactions(
     return {"items": [transaction_out(t) for t in rows], "total": money(total), "count": len(rows)}
 
 
+# --- Libreta del mes ------------------------------------------------------------------------
+
+MONTH_RE = re.compile(r"^(\d{4})-(0[1-9]|1[0-2])$")
+
+
+def parse_month(value: Optional[str]) -> tuple[date, date]:
+    """`"2026-10"` → (1 de octubre, 31 de octubre); sin valor, el mes de hoy. Del 2000 al 2100."""
+    if value is None:
+        first = today().replace(day=1)
+    else:
+        match = MONTH_RE.fullmatch(value)
+        if match is None:
+            raise _invalid("El mes va como AAAA-MM.", "month")
+        first = date(int(match.group(1)), int(match.group(2)), 1)
+        if not MIN_DAY <= first <= MAX_DAY:
+            raise _invalid("El mes va del 2000 al 2100.", "month")
+    after = first.replace(year=first.year + 1, month=1) if first.month == 12 else first.replace(month=first.month + 1)
+    return first, date.fromordinal(after.toordinal() - 1)
+
+
+def _totals(sums: dict) -> dict:
+    income = sums.get("income") or Decimal("0")
+    expense = sums.get("expense") or Decimal("0")
+    return {"income": money(income), "expense": money(expense), "net": money(income - expense)}
+
+
+def ledger(db: Session, user: User, month: Optional[str], kind: Optional[str], category_id: Optional[int]) -> dict:
+    """
+    Los movimientos del mes agrupados por día, del más nuevo al más viejo, con sus totales. Los
+    totales del mes y de cada día salen de `SUM` en SQL (siguen a los filtros) y van como texto.
+    """
+    prefs = ensure_user_setup(db, user)
+    start, end = parse_month(month)
+    filters = [
+        FinanceTransaction.user_id == user.id,
+        FinanceTransaction.occurred_on >= start,
+        FinanceTransaction.occurred_on <= end,
+    ]
+    if kind:
+        filters.append(FinanceTransaction.kind == kind)
+    if category_id is not None:
+        get_category(db, user, category_id)
+        filters.append(FinanceTransaction.category_id == category_id)
+
+    per_day: dict[date, dict] = {}
+    month_sums: dict[str, Decimal] = {}
+    for day, row_kind, value in (
+        db.query(FinanceTransaction.occurred_on, FinanceTransaction.kind, func.sum(FinanceTransaction.amount))
+        .filter(*filters)
+        .group_by(FinanceTransaction.occurred_on, FinanceTransaction.kind)
+    ):
+        per_day.setdefault(day, {})[row_kind] = value
+        month_sums[row_kind] = month_sums.get(row_kind, Decimal("0")) + value
+
+    rows = (
+        db.query(FinanceTransaction, FinanceCategory)
+        .join(FinanceCategory, FinanceCategory.id == FinanceTransaction.category_id)
+        .filter(*filters)
+        .order_by(FinanceTransaction.occurred_on.desc(), FinanceTransaction.id.desc())
+        .all()
+    )
+    days: dict[date, list] = {}
+    for t, c in rows:
+        days.setdefault(t.occurred_on, []).append(
+            {
+                **transaction_out(t),
+                "category": {"id": c.id, "name": c.name, "icon": c.icon, "color": c.color, "archived": c.archived},
+            }
+        )
+    return {
+        "month": start.strftime("%Y-%m"),
+        "today": today().isoformat(),
+        "currency": prefs.currency,
+        "totals": _totals(month_sums),
+        "days": [
+            {"date": day.isoformat(), **_totals(per_day[day]), "transactions": items}
+            for day, items in days.items()
+        ],
+    }
+
+
 # --- Resumen ------------------------------------------------------------------------------------
 
 

@@ -1,5 +1,7 @@
 import { createElement } from 'react';
 
+import './money.css';
+
 import { iconFor } from './icons.js';
 import { colorVar } from './palette.js';
 

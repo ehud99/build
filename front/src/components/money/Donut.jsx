@@ -1,6 +1,8 @@
 import { donutSegments } from './donut.js';
 import { colorVar } from './palette.js';
 
+import './money.css';
+
 const R = 42;
 const STROKE = 13;
 

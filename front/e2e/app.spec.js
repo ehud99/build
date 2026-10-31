@@ -43,7 +43,7 @@ test('el registro pide una clave de invitación válida', async ({ page }) => {
 test('registro, objetivos del mes, tema, salir y volver a entrar', async ({ page }) => {
   const username = unique();
   await registerUser(page, username, 'Luz');
-  await expect(page.getByTestId('dashboard-under-construction')).toBeVisible();
+  await expect(page.getByTestId('dash-goals-empty')).toBeVisible();
 
   // En PC la barra de módulos va justo debajo del logo, no a media pantalla.
   const rail = page.getByTestId('nav-rail');

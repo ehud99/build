@@ -3,9 +3,9 @@ import { createElement, useState } from 'react';
 
 import { apiError } from '@/lib/api.js';
 import * as financeApi from './api.js';
-import { CategoryIcon } from './CategoryIcon.jsx';
-import { iconFor } from './icons.js';
-import { COLOR_KEYS, COLOR_NAMES, ICON_KEYS, KIND_LABELS, colorVar } from './palette.js';
+import { CategoryIcon } from '@/components/money/CategoryIcon.jsx';
+import { iconFor } from '@/components/money/icons.js';
+import { COLOR_KEYS, COLOR_NAMES, ICON_KEYS, KIND_LABELS, colorVar } from '@/components/money/palette.js';
 import { Sheet } from './Sheet.jsx';
 
 /**

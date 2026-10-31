@@ -1,0 +1,65 @@
+/* ===================================================================
+   Gráficos (components/charts): colores como tokens en claro y oscuro,
+   validados con la skill `dataviz` (scripts/validate_palette.js):
+   - `--chart-goal` y `--chart-hours`: una serie por gráfico (objetivos
+     y horas), banda de luminosidad, contraste ≥ 3:1 y separación CVD.
+   - `--heat-1…4`: rampa ordinal de un solo tono (el del acento), de
+     claro a oscuro en el claro y al revés en el oscuro, con el extremo
+     más tenue ≥ 2:1 contra la superficie. `--heat-0` (0 %) es el gris
+     del borde fuerte y `--heat-none` (sin objetivos), el de la superficie,
+     más claro, para que no se confundan.
+   =================================================================== */
+
+:root {
+  --chart-goal: oklch(0.60 0.20 40);
+  --chart-hours: oklch(0.55 0.14 250);
+  --chart-track: oklch(0.93 0.04 40);
+  --chart-grid: var(--border);
+  --chart-axis: var(--border-strong);
+  --heat-none: var(--surface-2);
+  --heat-0: var(--border-strong);
+  --heat-1: oklch(0.77 0.11 48);
+  --heat-2: oklch(0.68 0.15 44);
+  --heat-3: oklch(0.58 0.18 40);
+  --heat-4: oklch(0.47 0.15 36);
+}
+
+@media screen {
+  :root[data-theme="dark"] {
+    --chart-goal: oklch(0.65 0.16 46);
+    --chart-hours: oklch(0.62 0.13 245);
+    --chart-track: oklch(0.32 0.06 46);
+    --heat-1: oklch(0.47 0.10 48);
+    --heat-2: oklch(0.58 0.13 48);
+    --heat-3: oklch(0.70 0.15 52);
+    --heat-4: oklch(0.83 0.12 62);
+  }
+}
+
+.chart-mark { transition: opacity 120ms ease; }
+.chart-dim .chart-mark:not([data-active]) { opacity: 0.45; }
+
+.chart-tooltip {
+  pointer-events: none;
+  position: absolute;
+  z-index: 20;
+  min-width: 6rem;
+  max-width: 14rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  padding: 0.4rem 0.6rem;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  transform: translate(-50%, calc(-100% - 8px));
+  white-space: nowrap;
+}
+
+/* El anillo del compromiso se llena una vez al cargar. */
+.chart-ring-fill { transition: stroke-dasharray 600ms cubic-bezier(0.2, 0.7, 0.3, 1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .chart-mark,
+  .chart-ring-fill { transition: none; }
+}

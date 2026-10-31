@@ -1,9 +1,12 @@
 # Finanzas (gastos e ingresos)
 
 Módulo `finance`: `back/app/modules/finance/` (modelos, servicio y router; migración `0004`) y
-`front/src/modules/finance/` (ruta `/finanzas`). Como la app «Gestor de gastos, ingresos»: arriba
-el **balance** y las pestañas **Gastos | Ingresos**; en la hoja, **Día | Semana | Mes | Año |
-Período** con ‹ ›, la **dona** por categorías y su lista; el **+** agrega un movimiento.
+`front/src/modules/finance/` (ruta `/finanzas`). Finanzas es la **libreta de movimientos**: el mes
+con ‹ ›, los totales del mes (Ingresos, Gastos, Neto), los filtros, la lista de gastos e ingresos
+agrupada por día, el **+**, las categorías y la moneda. Las **estadísticas** (balance de siempre,
+dona, porcentajes y los periodos Día | Semana | Mes | Año | Período) viven en el **Dashboard**, que
+usa `GET /api/finance/summary` y `GET /api/finance/settings` y lo compartido de
+`front/src/components/money/`.
 
 ## Dinero
 
@@ -35,7 +38,7 @@ coffee, health, pill, gift, party, game, movie, music, education, book, pet, clo
 gym, sport, wifi, phone, laptop, tv, electricity, water, gas, tools, insurance, tax, card, bank,
 salary, cash, coins, savings, investment, other.
 
-**Colores** (`service.COLORS` = `COLOR_KEYS`, tokens `--fin-<clave>` de `finance.css` en claro y
+**Colores** (`service.COLORS` = `COLOR_KEYS`, tokens `--fin-<clave>` de `components/money/money.css` en claro y
 oscuro): red, orange, amber, yellow, lime, green, teal, cyan, blue, indigo, violet, pink, brown, gray.
 
 **Monedas**: PEN, USD, EUR, MXN, COP, ARS, CLP.
@@ -55,13 +58,34 @@ Todas con sesión (`current_user`); un recurso de otro usuario responde 404.
 | `POST /api/finance/categories` | `{ kind, name, icon, color }` | 201 `Category` (al final) |
 | `PATCH /api/finance/categories/{id}` | `{ kind?, name?, icon?, color?, archived?, position? }` | `Category` |
 | `DELETE /api/finance/categories/{id}` | | 204 |
-| `GET /api/finance/summary?kind=&from=&to=` | sin fechas: el mes de hoy | `Summary` |
+| `GET /api/finance/ledger?month=&kind=&category_id=` | `month` = `AAAA-MM` (sin él, el de hoy) | `Ledger` |
+| `GET /api/finance/summary?kind=&from=&to=` | sin fechas: el mes de hoy (lo usa el Dashboard) | `Summary` |
 | `GET /api/finance/transactions?from&to&kind&category_id` | todos opcionales | `{ items: [Transaction], total, count }` (más recientes primero, hasta 1000) |
 | `POST /api/finance/transactions` | `{ kind, category_id, amount, occurred_on?, note? }` (sin fecha: hoy) | 201 `Transaction` |
 | `PATCH /api/finance/transactions/{id}` | `{ category_id?, amount?, occurred_on?, note? }` (el `kind` no cambia) | `Transaction` |
 | `DELETE /api/finance/transactions/{id}` | | 204 |
 
-`Summary`:
+`Ledger` (la libreta de Finanzas):
+```json
+{
+  "month": "2026-10", "today": "2026-10-31", "currency": "PEN",
+  "totals": { "income": "3750.00", "expense": "1801.29", "net": "1948.71" },
+  "days": [
+    { "date": "2026-10-31", "income": "0.00", "expense": "271.19", "net": "-271.19",
+      "transactions": [ Transaction + { "category": { id, name, icon, color, archived } } ] }
+  ]
+}
+```
+
+- Solo los días con movimientos, del más nuevo al más viejo; dentro del día, del más nuevo (mayor
+  `id`) al más viejo. Sin tope de filas.
+- `totals` y los de cada día salen de `SUM` en SQL agrupado por día y tipo (`Decimal`, texto con 2
+  decimales) y **siguen a los filtros**: con `kind=expense`, `income` es `"0.00"`. El frontend no suma.
+- `month` inválido (`2026-13`, `2026-1`, `1999-12`, `2101-01`…) → 422 `VALIDATION_ERROR` con
+  `detail.field = "month"`. `category_id` de otro usuario → 404 `CATEGORY_NOT_FOUND`; de otro tipo
+  que `kind`, lista vacía.
+
+`Summary` (del Dashboard):
 ```json
 {
   "kind": "expense", "from": "2026-10-01", "to": "2026-10-31", "today": "2026-10-31",
@@ -90,19 +114,27 @@ Errores:
 
 ## Frontend
 
-- `dates.js` (puro, con pruebas): días como `YYYY-MM-DD` en UTC, semana desde el lunes,
-  `periodRange`, `shiftPeriod` (un rango propio se corre su largo), `switchMode` y las etiquetas
-  «Hoy, 31 de octubre», «Ayer, …», «Miércoles, 28 de octubre», «26 oct – 1 nov», «Octubre 2026»,
-  «2026». «Hoy» viene del servidor.
-- `money.js`, `donut.js` (tramos con `pathLength="100"` y un hueco entre ellos), `palette.js`:
-  puros, con pruebas `node:test`.
-- Bloque del balance `.fin-hero` (degradado del acento con `text-accent-fg`), hoja `bg-surface`.
-- Dona SVG a mano; sin datos, anillo `--fin-ring` y «Sin gastos en este periodo».
-- Tocar una categoría abre sus movimientos del periodo (editar y borrar) y «Editar categoría».
-- **+** flotante (`.fin-fab`, sobre la barra del celular) → «Nuevo gasto» / «Nuevo ingreso» según
-  la pestaña: monto grande (`inputMode="decimal"`), categorías con «+ Crear», fecha y nota.
-  `Sheet`: hoja desde abajo en < 768 px y modal en PC; Escape cierra la de arriba.
+- `FinancePage`: `PageHeader` «Finanzas» con el «⋯» (Categorías y Moneda). Una tarjeta con el mes
+  («Octubre 2026», ‹ › del 2000-01 al 2100-12) y la franja **Ingresos (+) | Gastos (−) | Neto**
+  (`text-success` / `text-danger`, `text-text-muted` en cero). Debajo, los chips **Todos | Gastos |
+  Ingresos** y un `<select>` de categoría (las del tipo elegido, también las archivadas).
+- URL: `?mes=AAAA-MM` (sin él, el mes de hoy del servidor), `?tipo=gastos|ingresos` y `?cat=<id>`;
+  se cambian con `replace`. Al pasar a un tipo, la categoría del otro tipo se quita.
+- La lista agrupada por día: «Hoy», «Ayer», «Jueves, 29 de octubre» (con el año si no es el de hoy)
+  y el neto del día; cada fila con `CategoryIcon`, la categoría, la nota en gris y el monto con
+  signo y color (ingreso `+`, gasto `−`). Tocar una fila abre «Editar gasto/ingreso» con «Borrar».
+  Mientras llegan otros filtros se ve la libreta anterior atenuada.
+- Vacío: «Sin movimientos en octubre» con «Agregar movimiento»; con filtros, «Nada con estos
+  filtros» y «Quitar filtros».
+- **+** flotante (`.fin-fab`, sobre la barra del celular) → «Nuevo movimiento» con el selector
+  **Gasto | Ingreso** (empieza en el tipo del filtro, o Gasto): monto grande (`inputMode="decimal"`),
+  categorías del tipo con «+ Crear», fecha y nota. Al cambiar de tipo se borra la categoría elegida.
+  Al editar el tipo no cambia (no hay selector). Uno nuevo con fecha de otro mes lleva a ese mes.
+- `Sheet`: hoja desde abajo en < 768 px y modal en PC; Escape cierra la de arriba.
 - «Crear nueva categoría»: nombre, Gastos ○ Ingresos, «Símbolos» y «Color». Al editar: Archivar o
-  Desarchivar y Borrar.
-- «⋯» de la cabecera: «Categorías» (todas, también las archivadas) y la moneda.
-- Con `prefers-reduced-motion` no hay animaciones de hoja ni de la dona.
+  Desarchivar y Borrar. «⋯» › «Categorías»: todas, también las archivadas.
+- `ledger.js` (puro, con pruebas `node:test`): `parseMonth`, `shiftMonth`, `monthLabel`,
+  `dayHeading`, `signedMoney` (signo `+`/`−` delante del texto formateado, sin sumar) y `netTone`.
+  Lo de dinero y categorías (`money.js`, `CategoryIcon`, `palette.js`, `money.css`) es de
+  `components/money/`, compartido con el Dashboard.
+- Con `prefers-reduced-motion` no hay animaciones de hoja ni transiciones.

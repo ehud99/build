@@ -185,6 +185,18 @@ def read_summary(
     return service.summary(db, user, kind, start, end)
 
 
+@router.get("/ledger")
+def read_ledger(
+    month: Optional[str] = None,
+    kind: Optional[Kind] = None,
+    category_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
+):
+    """La libreta del mes (`month=AAAA-MM`, sin él el de hoy): movimientos por día y totales."""
+    return service.ledger(db, user, month, kind, category_id)
+
+
 @router.get("/transactions")
 def read_transactions(
     start: Optional[date] = Query(default=None, alias="from"),

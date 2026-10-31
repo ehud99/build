@@ -27,14 +27,12 @@ export async function deleteCategory(id) {
   await api.delete(`/finance/categories/${id}`);
 }
 
-/** `{balance, total, currency, categories: [{category, total, share, percent, count}]}`. */
-export async function fetchSummary(kind, from, to) {
-  return (await api.get('/finance/summary', { params: { kind, from, to } })).data;
-}
-
-/** `{items, total, count}` con los filtros `{from, to, kind, category_id}`. */
-export async function fetchTransactions(params) {
-  return (await api.get('/finance/transactions', { params })).data;
+/**
+ * La libreta del mes: `{month, today, currency, totals: {income, expense, net}, days: [{date,
+ * income, expense, net, transactions}]}`, con los filtros `{month, kind, category_id}`.
+ */
+export async function fetchLedger(params) {
+  return (await api.get('/finance/ledger', { params })).data;
 }
 
 export async function createTransaction(body) {

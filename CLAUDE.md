@@ -13,13 +13,16 @@ suyo (`user_id`). Backend **FastAPI + SQLAlchemy + PostgreSQL + Alembic** en `ba
 |---|---|
 | [`docs/contrato.md`](docs/contrato.md) | API, errores, reglas de cuentas y objetivos, rutas del frontend, glitch, módulos |
 | [`docs/contrato-notas.md`](docs/contrato-notas.md) | Notas: cards tipo Google Keep, editor tipo Notas del iPhone (Tiptap, JSON validado) |
-| [`docs/contrato-finanzas.md`](docs/contrato-finanzas.md) | Finanzas: gastos e ingresos como «Gestor de gastos», categorías, balance, montos en `Decimal` |
+| [`docs/contrato-dashboard.md`](docs/contrato-dashboard.md) | Dashboard: métricas de objetivos y horas (`/api/goals/stats`, `/heatmap`), finanzas del mes, gráficos |
+| [`docs/contrato-finanzas.md`](docs/contrato-finanzas.md) | Finanzas: libreta de movimientos (`/ledger`), categorías, moneda, montos en `Decimal`; la dona y lo compartido en `components/money/` |
 | [`docs/contrato-pizarra.md`](docs/contrato-pizarra.md) | Pizarra: Excalidraw, escena validada (sin `embeddable`/`iframe`, imágenes sin SVG), miniaturas, topes |
 | [`README.md`](README.md) | Cómo correr y probar en local |
 
 ## Estado
 
-v1: inicio público y Dashboard «En desarrollo»; registro con clave de invitación; login de dos
+v1: inicio público «En desarrollo»; Dashboard (`/inicio`: compromiso del mes, rachas, evolución,
+mapa de calor del año, horas trabajadas, balance y dona de gastos e ingresos; gráficos SVG en
+`front/src/components/charts/`); registro con clave de invitación; login de dos
 pantallas; Objetivos del mes (hasta 10, solo se marca hoy, meses pasados de solo lectura, «Copiar
 mes anterior», rachas por casilla y la fila en llamas del mes completo, recomendaciones en el
 campo del objetivo nuevo, horas trabajadas por día, vista «Hoy» en el celular y exportar a
@@ -33,8 +36,7 @@ Excel o PDF); Notas (`/notas`), Finanzas (`/finanzas`) y Pizarra (`/pizarra`, Ex
 - `/real-suite`: la suite completa (pytest, unitarias, lint y Playwright) antes de desplegar
   (`.claude/skills/real-suite/`).
 
-Próximos módulos: tareas (probablemente junto al calendario) y un dashboard con los datos de todo
-(horas trabajadas, finanzas…).
+Próximo módulo: tareas (probablemente junto al calendario).
 
 ## Reglas
 

@@ -1,8 +1,8 @@
 import { ChevronRight, Plus } from 'lucide-react';
 import { useState } from 'react';
 
-import { CategoryIcon } from './CategoryIcon.jsx';
-import { KIND_LABELS } from './palette.js';
+import { CategoryIcon } from '@/components/money/CategoryIcon.jsx';
+import { KIND_LABELS } from '@/components/money/palette.js';
 import { Sheet } from './Sheet.jsx';
 
 /** Todas las categorías de un tipo (también las archivadas) para editarlas o crear una. */

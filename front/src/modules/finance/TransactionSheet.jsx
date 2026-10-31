@@ -3,24 +3,26 @@ import { useMemo, useState } from 'react';
 
 import { apiError } from '@/lib/api.js';
 import * as financeApi from './api.js';
-import { CategoryIcon } from './CategoryIcon.jsx';
+import { CategoryIcon } from '@/components/money/CategoryIcon.jsx';
 import { CategorySheet } from './CategorySheet.jsx';
-import { isDay } from './dates.js';
-import { amountToInput, currencySymbol, normalizeAmount, sanitizeAmountTyping } from './money.js';
-import { colorVar } from './palette.js';
+import { isDay } from './ledger.js';
+import { amountToInput, currencySymbol, normalizeAmount, sanitizeAmountTyping } from '@/components/money/money.js';
+import { colorVar } from '@/components/money/palette.js';
 import { Sheet } from './Sheet.jsx';
 
-const TITLES = {
-  expense: ['Nuevo gasto', 'Editar gasto'],
-  income: ['Nuevo ingreso', 'Editar ingreso'],
-};
+const EDIT_TITLES = { expense: 'Editar gasto', income: 'Editar ingreso' };
+const KIND_OPTIONS = [
+  { key: 'expense', label: 'Gasto' },
+  { key: 'income', label: 'Ingreso' },
+];
 
 /**
- * «Nuevo gasto» / «Nuevo ingreso» (o editar uno): el monto grande con la moneda (teclado numérico
- * en el celular, coma o punto), la grilla de categorías con «+ Crear», la fecha (hoy) y la nota.
+ * «Nuevo movimiento» (con el selector Gasto | Ingreso) o editar uno (el tipo no cambia): el monto
+ * grande con la moneda (teclado numérico en el celular, coma o punto), la grilla de categorías con
+ * «+ Crear», la fecha (hoy) y la nota. Al editar, también «Borrar».
  */
 export function TransactionSheet({
-  kind,
+  defaultKind = 'expense',
   transaction,
   categories,
   currency,
@@ -31,6 +33,7 @@ export function TransactionSheet({
   onCategoryCreated,
 }) {
   const editing = Boolean(transaction);
+  const [kind, setKind] = useState(transaction?.kind ?? defaultKind);
   const [amount, setAmount] = useState(editing ? amountToInput(transaction.amount) : '');
   const [categoryId, setCategoryId] = useState(transaction?.category_id ?? null);
   const [day, setDay] = useState(transaction?.occurred_on ?? today);
@@ -44,6 +47,14 @@ export function TransactionSheet({
     () => categories.filter((c) => c.kind === kind && (!c.archived || c.id === transaction?.category_id)),
     [categories, kind, transaction],
   );
+
+  // Otro tipo: la categoría elegida ya no vale.
+  const changeKind = (next) => {
+    if (next === kind) return;
+    setKind(next);
+    setCategoryId(null);
+    setError(null);
+  };
 
   const save = async (e) => {
     e?.preventDefault();
@@ -105,8 +116,29 @@ export function TransactionSheet({
 
   return (
     <>
-      <Sheet title={TITLES[kind][editing ? 1 : 0]} onClose={onClose} footer={footer} testId="fin-tx-sheet">
+      <Sheet title={editing ? EDIT_TITLES[kind] : 'Nuevo movimiento'} onClose={onClose} footer={footer} testId="fin-tx-sheet">
         <form id="fin-tx-form" onSubmit={save} className="space-y-5">
+          {editing ? null : (
+            <div className="flex gap-1 rounded-full bg-surface-2 p-1" role="radiogroup" aria-label="Tipo">
+              {KIND_OPTIONS.map((o) => (
+                <button
+                  key={o.key}
+                  type="button"
+                  role="radio"
+                  aria-checked={kind === o.key}
+                  onClick={() => changeKind(o.key)}
+                  className={`min-h-10 flex-1 rounded-full text-sm font-semibold transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-accent ${
+                    kind === o.key
+                      ? `bg-surface shadow-sm ${o.key === 'income' ? 'text-success' : 'text-danger'}`
+                      : 'text-text-muted hover:text-text'
+                  }`}
+                  data-testid={`fin-tx-kind-${o.key}`}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          )}
           <label className="flex items-baseline justify-center gap-2 rounded-3xl bg-surface-2 px-4 py-5">
             <span className="sr-only">Monto</span>
             <input

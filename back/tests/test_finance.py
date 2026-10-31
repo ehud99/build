@@ -41,7 +41,7 @@ def summary(client, kind="expense", start="2026-10-01", end="2026-10-31"):
 
 
 def test_needs_session(client):
-    for path in ("settings", "categories", "summary", "transactions"):
+    for path in ("settings", "categories", "summary", "transactions", "ledger"):
         assert client.get(f"/api/finance/{path}").status_code == 401
 
 
@@ -296,3 +296,95 @@ def test_users_are_isolated(user_client, fin_today):
         assert r.status_code == 404 and r.json()["error_code"] == "CATEGORY_NOT_FOUND"
         assert other.get("/api/finance/transactions", params={"category_id": food["id"]}).status_code == 404
     assert summary(user_client).json()["total"] == "50.00"
+
+
+# --- Libreta del mes (GET /api/finance/ledger) ----------------------------------------------------
+
+
+def ledger(client, **params):
+    return client.get("/api/finance/ledger", params=params)
+
+
+def test_ledger_groups_by_day_with_exact_totals(user_client, fin_today):
+    expense, income = cats(user_client, "expense"), cats(user_client, "income")
+    food = expense["Alimentación"]
+    a = spend(user_client, food["id"], "0.10", day="2026-10-02", note="Pan").json()
+    b = spend(user_client, food["id"], "0.20", day="2026-10-02").json()
+    c = spend(user_client, expense["Transporte"]["id"], "0.30", day="2026-10-31").json()
+    d = spend(user_client, income["Sueldo"]["id"], "1000.05", kind="income", day="2026-10-31").json()
+    spend(user_client, food["id"], "99", day="2026-09-30")
+    spend(user_client, food["id"], "99", day="2026-11-01")
+
+    r = ledger(user_client, month="2026-10")
+    assert r.status_code == 200
+    body = r.json()
+    assert (body["month"], body["currency"], body["today"]) == ("2026-10", "PEN", "2026-10-31")
+    # 0.10 + 0.20 + 0.30 en float no da 0.60 exacto.
+    assert body["totals"] == {"income": "1000.05", "expense": "0.60", "net": "999.45"}
+    assert [x["date"] for x in body["days"]] == ["2026-10-31", "2026-10-02"]
+    last, first = body["days"]
+    assert (last["income"], last["expense"], last["net"]) == ("1000.05", "0.30", "999.75")
+    assert (first["income"], first["expense"], first["net"]) == ("0.00", "0.30", "-0.30")
+    # Del más nuevo al más viejo dentro del día.
+    assert [t["id"] for t in last["transactions"]] == [d["id"], c["id"]]
+    assert [t["id"] for t in first["transactions"]] == [b["id"], a["id"]]
+    row = first["transactions"][1]
+    assert (row["amount"], row["kind"], row["note"]) == ("0.10", "expense", "Pan")
+    assert row["category"] == {
+        "id": food["id"], "name": "Alimentación", "icon": food["icon"], "color": food["color"], "archived": False,
+    }
+
+
+def test_ledger_default_month_and_empty(user_client, fin_today):
+    food = cats(user_client, "expense")["Alimentación"]["id"]
+    spend(user_client, food, "5", day="2026-10-15")
+    body = ledger(user_client).json()
+    assert body["month"] == "2026-10"
+    assert body["totals"]["expense"] == "5.00"
+    fin_today.set(date(2026, 12, 3))
+    empty = ledger(user_client).json()
+    assert empty["month"] == "2026-12"
+    assert empty["totals"] == {"income": "0.00", "expense": "0.00", "net": "0.00"}
+    assert empty["days"] == []
+
+
+def test_ledger_filters(user_client, fin_today):
+    expense, income = cats(user_client, "expense"), cats(user_client, "income")
+    spend(user_client, expense["Alimentación"]["id"], "10", day="2026-10-05")
+    spend(user_client, expense["Transporte"]["id"], "2.50", day="2026-10-05")
+    spend(user_client, income["Sueldo"]["id"], "100", kind="income", day="2026-10-06")
+
+    only_expense = ledger(user_client, month="2026-10", kind="expense").json()
+    assert only_expense["totals"] == {"income": "0.00", "expense": "12.50", "net": "-12.50"}
+    assert [x["date"] for x in only_expense["days"]] == ["2026-10-05"]
+
+    only_income = ledger(user_client, month="2026-10", kind="income").json()
+    assert only_income["totals"] == {"income": "100.00", "expense": "0.00", "net": "100.00"}
+
+    by_cat = ledger(user_client, month="2026-10", category_id=expense["Transporte"]["id"]).json()
+    assert by_cat["totals"]["expense"] == "2.50"
+    assert [t["category"]["name"] for x in by_cat["days"] for t in x["transactions"]] == ["Transporte"]
+    # Una categoría de ingresos con el filtro de gastos: nada.
+    assert ledger(user_client, month="2026-10", kind="expense", category_id=income["Sueldo"]["id"]).json()["days"] == []
+    assert ledger(user_client, kind="other").status_code == 422
+
+
+@pytest.mark.parametrize("month", ["2026-13", "2026-00", "2026-1", "26-10", "2026/10", "1999-12", "2101-01", "abc", ""])
+def test_ledger_invalid_month(user_client, fin_today, month):
+    r = ledger(user_client, month=month)
+    assert r.status_code == 422, month
+    assert r.json()["error_code"] == "VALIDATION_ERROR"
+    assert r.json()["detail"]["field"] == "month"
+
+
+def test_ledger_isolated_between_users(user_client, fin_today):
+    food = cats(user_client, "expense")["Alimentación"]
+    spend(user_client, food["id"], "50")
+    with TestClient(app) as other:
+        assert register(other, username="sol", name="Sol").status_code == 201
+        body = ledger(other).json()
+        assert body["days"] == [] and body["totals"]["expense"] == "0.00"
+        r = ledger(other, category_id=food["id"])
+        assert r.status_code == 404 and r.json()["error_code"] == "CATEGORY_NOT_FOUND"
+    assert ledger(user_client).json()["totals"]["expense"] == "50.00"
+    assert ledger(TestClient(app)).status_code == 401

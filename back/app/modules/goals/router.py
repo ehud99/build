@@ -1,13 +1,13 @@
 from decimal import Decimal
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Path, Response
+from fastapi import APIRouter, Depends, Path, Query, Response
 from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.models import User
-from app.modules.goals import service
+from app.modules.goals import service, stats
 from app.security import current_user
 
 router = APIRouter(prefix="/api/goals", tags=["goals"])
@@ -118,3 +118,19 @@ def set_work_hours(
     user: User = Depends(current_user),
 ):
     return service.set_work_hours(db, user, day, body.hours)
+
+
+@router.get("/stats")
+def read_stats(month: Optional[str] = None, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    """Estadísticas del mes para el Dashboard (docs/contrato-dashboard.md)."""
+    return stats.month_stats(db, user, service.parse_month(month))
+
+
+@router.get("/heatmap")
+def read_heatmap(
+    year: Optional[int] = Query(default=None),
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
+):
+    """Mapa de calor del año: marcas y objetivos de cada día con objetivos, hasta hoy."""
+    return stats.heatmap(db, user, stats.parse_year(year))
