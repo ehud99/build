@@ -14,8 +14,11 @@ class Settings(BaseSettings):
     # `true` detrás de HTTPS.
     COOKIE_SECURE: bool = False
 
-    # Si se define, el registro pide esta clave (para que solo entren los amigos).
+    # Clave de invitación que pide el registro. Vacía = registro cerrado.
     INVITE_CODE: str = ""
+
+    # «Hoy» de los objetivos (solo se marca el día de hoy).
+    APP_TIMEZONE: str = "America/Lima"
 
     # Bloqueo del login, como en forge (AJ3): tras 3 fallos seguidos, 1 minuto de espera
     # antes de cada intento; al llegar a 8, bloqueado hasta `scripts/unlock_user.py`.
