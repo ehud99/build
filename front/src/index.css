@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+/* ===================================================================
+   Tokens del tema (los mismos nombres que forge): claro «warm paper» y
+   oscuro «warm dark». Las clases semánticas (bg-bg, bg-surface, text-text,
+   text-text-muted, border-border, bg-accent…) apuntan a estas variables:
+   cambiar `data-theme` en <html> cambia todo sin prefijos `dark:`.
+   =================================================================== */
+
+:root {
+  --bg: #FAFAF7;
+  --surface: #FFFFFF;
+  --surface-2: #F4F2EC;
+  --surface-3: #EDEAE2;
+  --border: #E6E2D8;
+  --border-strong: #D6D1C4;
+  --text: #1A1916;
+  --text-muted: #6E6960;
+  --text-faint: #9A958A;
+
+  --accent: oklch(0.60 0.20 40);
+  --accent-soft: oklch(0.95 0.045 40);
+  --accent-fg: #ffffff;
+  --success: oklch(0.55 0.11 155);
+  --danger: oklch(0.55 0.18 28);
+
+  --glass: oklch(1 0 0 / 0.72);
+  --shadow-md: 0 8px 24px -8px oklch(0 0 0 / 0.10), 0 2px 6px -2px oklch(0 0 0 / 0.05);
+
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #16140F;
+  --surface: #1F1D17;
+  --surface-2: #2A2720;
+  --surface-3: #35312A;
+  --border: #2D2A23;
+  --border-strong: #3D3930;
+  --text: #F2EFE6;
+  --text-muted: #ACA697;
+  --text-faint: #706B5E;
+
+  --accent: oklch(0.75 0.17 50);
+  --accent-soft: oklch(0.32 0.07 50);
+  --accent-fg: #1A0E08;
+  --success: oklch(0.70 0.13 155);
+  --danger: oklch(0.68 0.17 28);
+
+  --glass: oklch(0.22 0.01 80 / 0.72);
+  --shadow-md: 0 10px 28px -6px oklch(0 0 0 / 0.50), 0 2px 8px -2px oklch(0 0 0 / 0.30);
+
+  color-scheme: dark;
+}
+
+@theme inline {
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", monospace;
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-faint: var(--text-faint);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-fg: var(--accent-fg);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-glass: var(--glass);
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ===================================================================
+   Login y registro (copiados de forge, AJ2): cada pantalla entra
+   deslizándose, el globo del bot salta y la cara «habla» al escribir.
+   =================================================================== */
+
+@keyframes code-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(7px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(3px); }
+}
+.animate-code-shake { animation: code-shake 420ms ease-in-out; }
+
+@keyframes login-step-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.login-step-in { animation: login-step-in 320ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+
+@keyframes login-bot-bubble {
+  0% { opacity: 0; transform: translateX(-6px) scale(0.92) skewX(-6deg); filter: blur(2px); }
+  60% { opacity: 1; transform: scale(1.02) skewX(1deg); filter: none; }
+  100% { transform: none; }
+}
+.login-bot-bubble { animation: login-bot-bubble 280ms ease-out both; transform-origin: left center; }
+
+@keyframes login-bot-talk {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.04, 0.94) translateY(1px); }
+}
+.login-bot-talking { animation: login-bot-talk 180ms ease-in-out infinite; transform-origin: bottom center; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-code-shake,
+  .login-step-in,
+  .login-bot-bubble,
+  .login-bot-talking { animation: none; }
+}
+
+/* Vidrio de las barras del panel. */
+.glass-panel {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+}
