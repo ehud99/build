@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Path, Response
@@ -33,6 +34,8 @@ class MonthOut(BaseModel):
     editable: bool
     max_goals: int
     goals: list[GoalOut]
+    work_hours: dict[str, str]
+    total_hours: str
 
 
 class GoalUpdate(BaseModel):
@@ -54,6 +57,17 @@ class CheckIn(BaseModel):
 
 class MonthIn(BaseModel):
     month: str
+
+
+class HoursIn(BaseModel):
+    hours: Decimal
+
+
+class HoursOut(BaseModel):
+    month: str
+    day: int
+    hours: str
+    total_hours: str
 
 
 @router.get("", response_model=MonthOut)
@@ -94,3 +108,13 @@ def copy_previous(body: MonthIn, db: Session = Depends(get_db), user: User = Dep
     month = service.parse_month(body.month)
     service.copy_previous(db, user, month)
     return service.month_out(db, user, month)
+
+
+@router.put("/work-hours/{day}", response_model=HoursOut)
+def set_work_hours(
+    body: HoursIn,
+    day: int = Path(ge=1, le=31),
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
+):
+    return service.set_work_hours(db, user, day, body.hours)

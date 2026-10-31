@@ -65,7 +65,9 @@ Zona horaria de la app: `APP_TIMEZONE` (por defecto `America/Lima`). «Hoy» se 
   "today": "2026-11-03",
   "editable": true,
   "max_goals": 10,
-  "goals": [Goal, ...]
+  "goals": [Goal, ...],
+  "work_hours": { "5": "8.5", "6": "4" },
+  "total_hours": "12.5"
 }
 ```
 
@@ -80,6 +82,7 @@ Zona horaria de la app: `APP_TIMEZONE` (por defecto `America/Lima`). «Hoy» se 
 | `DELETE /api/goals/{id}` | | 204 |
 | `PUT /api/goals/{id}/checks/{day}` | `{ done: bool }` | 200 `Goal` |
 | `POST /api/goals/copy-previous` | `{ month }` | 201 `Month` |
+| `PUT /api/goals/work-hours/{day}` | `{ hours: "8.5" }` | 200 `{ month, day, hours, total_hours }` |
 
 - Título: 1 a 80 caracteres, sin espacios a los lados.
 - 409 `GOAL_LIMIT` al pasar de 10 objetivos en un mes.
@@ -88,6 +91,15 @@ Zona horaria de la app: `APP_TIMEZONE` (por defecto `America/Lima`). «Hoy» se 
 - 404 `GOAL_NOT_FOUND` si el objetivo no existe o es de otro usuario.
 - `copy-previous` copia los títulos (no las marcas) del mes anterior, en el mismo orden:
   409 `MONTH_NOT_EMPTY` si el mes ya tiene objetivos, 404 `NOTHING_TO_COPY` si el anterior no tiene.
+
+### Horas trabajadas
+
+La fila «Horas trabajadas» de la hoja (para el dashboard): por día y usuario, no por objetivo
+(tabla `work_hours`, `Numeric(4,1)`; migración `0002`). Como las marcas, **solo las de hoy**
+(409 `DAY_NOT_EDITABLE`), de 0 a 24 en pasos de media hora (422 `VALIDATION_ERROR`); `0` borra el
+día. Las horas viajan como texto (`"8.5"`), nunca `float`; el frontend las suma en medias horas
+(`modules/goals/hours.js`). En la hoja se editan con − y + bajo la tabla; en el celular, en «Hoy».
+Se guardan cuando se deja de tocar (450 ms).
 
 ### Puntaje (lo calcula el frontend)
 
@@ -121,7 +133,7 @@ una probabilidad de 5 % sale «Tomar agua». Se elige una vez al abrir el campo.
 | `/login` | Login de dos pantallas como forge (AJ2). Arriba a la derecha «Ir al inicio». Pantalla 1: bot, «USUARIO», «Iniciar sesión» y debajo «Crear cuenta». Pantalla 2: usuario, llave, bot, 6 casillas (4 – 2), «Verificar código» (cápsula), «Cambiar usuario» e «Ir al inicio» |
 | `/registro` | Registro guiado por el mismo bot: clave de invitación, nombre, usuario, código y confirmación |
 | `/inicio` | Panel › Dashboard: «En desarrollo» |
-| `/objetivos` | Panel › Objetivos: el calendario del mes |
+| `/objetivos` | Panel › Objetivos: el calendario del mes (`?mes=YYYY-MM`). En el celular (< 768 px) el mes actual abre en **Hoy** (`TodayView`: solo los objetivos con la casilla de hoy grande, su racha y su T, y las horas de hoy) y **Mes** muestra la hoja. **Exportar**: Excel (CSV con `;`, coma decimal y BOM, `objetivos-YYYY-MM.csv`) o «Imprimir o PDF» (la hoja completa, horizontal y siempre en claro) |
 
 Panel: barra de íconos de vidrio a la izquierda en PC, justo debajo del logo como en forge
 (Inicio `House`, Objetivos `CalendarDays`), y abajo en el celular; arriba el logo «Real» y el selector «Claro | Oscuro»; abajo a la

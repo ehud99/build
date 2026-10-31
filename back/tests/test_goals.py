@@ -24,6 +24,8 @@ def test_month_defaults_to_current(user_client, today):
         "editable": True,
         "max_goals": 10,
         "goals": [],
+        "work_hours": {},
+        "total_hours": "0",
     }
 
 
@@ -142,3 +144,48 @@ def test_users_only_see_their_own(user_client, today):
         ):
             assert r.status_code == 404
             assert r.json()["error_code"] == "GOAL_NOT_FOUND"
+
+
+def hours(client, day, value):
+    return client.put(f"/api/goals/work-hours/{day}", json={"hours": value})
+
+
+def test_month_has_work_hours(user_client, today):
+    month = user_client.get("/api/goals").json()
+    assert month["work_hours"] == {}
+    assert month["total_hours"] == "0"
+
+
+def test_work_hours_only_today_in_half_hours(user_client, today):
+    r = hours(user_client, 15, "8.5")
+    assert r.status_code == 200
+    assert r.json() == {"month": "2026-11", "day": 15, "hours": "8.5", "total_hours": "8.5"}
+    # Se corrige el mismo día; un número también vale.
+    assert hours(user_client, 15, 6).json()["hours"] == "6"
+    today.set(date(2026, 11, 16))
+    assert hours(user_client, 16, "4").json()["total_hours"] == "10"
+    month = user_client.get("/api/goals").json()
+    assert month["work_hours"] == {"15": "6", "16": "4"}
+    assert month["total_hours"] == "10"
+    # Otro mes no las ve.
+    assert user_client.get("/api/goals", params={"month": "2026-12"}).json()["work_hours"] == {}
+
+    for day in (15, 17):
+        r = hours(user_client, day, "1")
+        assert r.status_code == 409
+        assert r.json()["error_code"] == "DAY_NOT_EDITABLE"
+    for bad in ("-1", "24.5", "7.3", "abc"):
+        r = hours(user_client, 16, bad)
+        assert r.status_code == 422, bad
+    # 0 borra el día.
+    assert hours(user_client, 16, "0").json()["total_hours"] == "6"
+    assert user_client.get("/api/goals").json()["work_hours"] == {"15": "6"}
+
+
+def test_work_hours_are_per_user(user_client, today):
+    hours(user_client, 15, "8")
+    with TestClient(app) as other:
+        register(other, username="sol", name="Sol")
+        assert other.get("/api/goals").json()["work_hours"] == {}
+        hours(other, 15, "2")
+    assert user_client.get("/api/goals").json()["work_hours"] == {"15": "8"}

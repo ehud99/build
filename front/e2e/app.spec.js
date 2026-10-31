@@ -16,6 +16,13 @@ async function typeCode(page, prefix, code) {
   await page.keyboard.type(code);
 }
 
+/** En el celular el mes actual abre en «Hoy»: pasa a la hoja del mes (espera a que cargue). */
+async function showMonth(page) {
+  await expect(page.getByTestId('goals-table')).toBeAttached();
+  if (await page.getByTestId('view-month').isVisible()) await page.getByTestId('view-month').click();
+  await expect(page.getByTestId('goals-table')).toBeVisible();
+}
+
 async function registerUser(page, username, name = 'Prueba') {
   await page.goto('/registro');
   await page.getByTestId('register-invite').fill(INVITE);
@@ -79,12 +86,14 @@ test('registro, objetivos del mes, tema, salir y volver a entrar', async ({ page
   await expect(page.getByTestId('goal-add-input')).toHaveAttribute('placeholder', /^(Dormir 8 horas|Tomar agua)$/);
   await page.getByTestId('goal-add-input').fill('Leer 20 min');
   await page.getByTestId('goal-add-input').press('Enter');
-  await expect(page.getByTestId('goals-table')).toBeVisible();
+  await expect(page.getByTestId('goals-table')).toBeAttached();
   await page.getByTestId('goal-add').click();
   await page.getByTestId('goal-add-input').fill('Correr');
   await page.getByTestId('goal-add-input').press('Enter');
   const rows = page.locator('[data-testid^="goal-row-"]');
   await expect(rows).toHaveCount(2);
+  // En el celular el mes actual abre en «Hoy»: esta prueba usa la hoja del mes.
+  await showMonth(page);
 
   // Marcar hoy en el primero: T, puntaje del día y final.
   const firstId = (await rows.first().getAttribute('data-testid')).replace('goal-row-', '');
@@ -108,6 +117,7 @@ test('registro, objetivos del mes, tema, salir y volver a entrar', async ({ page
   await page.getByTestId(`goal-title-${secondId}`).press('Enter');
   expect((await saved).status()).toBe(200);
   await page.reload();
+  await showMonth(page);
   await expect(page.getByTestId(`goal-title-${secondId}`)).toHaveValue('Correr 5 km');
   await expect(page.locator(`[data-testid="check-${firstId}-${day}"]`)).toHaveAttribute('aria-pressed', 'true');
   page.once('dialog', (d) => d.accept());
@@ -118,6 +128,7 @@ test('registro, objetivos del mes, tema, salir y volver a entrar', async ({ page
   await page.getByTestId('month-next').click();
   await expect(page.getByTestId('goals-empty')).toBeVisible();
   await page.getByTestId('goal-copy-previous').click();
+  await expect(page.getByTestId('goals-table')).toBeAttached();
   await expect(rows).toHaveCount(1);
   await expect(page.locator('[data-testid^="goal-title-"]').first()).toHaveValue('Leer 20 min');
 
@@ -156,4 +167,71 @@ test('tres códigos malos piden esperar', async ({ page }) => {
   }
   await expect(page.getByTestId('login-error')).toContainText(/Espera/);
   await expect(page.getByTestId('login-submit')).toBeDisabled();
+});
+
+async function goalsWith(page, titles) {
+  await registerUser(page, unique());
+  await page.getByTestId('nav-goals').click();
+  for (const title of titles) {
+    await page.getByTestId('goal-add').click();
+    await page.getByTestId('goal-add-input').fill(title);
+    await page.getByTestId('goal-add-input').press('Enter');
+    await expect(page.locator(`[data-testid^="goal-title-"][value="${title}"]`).first()).toBeAttached();
+  }
+}
+
+const savedHours = (page) =>
+  page.waitForResponse((r) => r.url().includes('/api/goals/work-hours/') && r.request().method() === 'PUT');
+
+test('horas trabajadas de hoy y exportar a Excel', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'En el celular las horas van en la vista de hoy (otra prueba).');
+  await goalsWith(page, ['Leer', 'Trabajo']);
+
+  const saved = savedHours(page);
+  await page.getByTestId('hours-plus').click();
+  await page.getByTestId('hours-plus').click();
+  await page.getByTestId('hours-plus').click();
+  await expect(page.getByTestId('hours-today')).toHaveText('1,5 h');
+  expect((await saved).status()).toBe(200);
+  await expect(page.getByTestId('hours-total')).toHaveText('1,5');
+  await page.reload();
+  await expect(page.getByTestId('hours-today')).toHaveText('1,5 h');
+  const todayCol = page.locator('th[data-today-col]');
+  const day = (await todayCol.textContent()).trim();
+  await expect(page.getByTestId(`hours-${day}`)).toHaveText('1,5');
+
+  // Exportar: CSV para Excel con la hoja del mes.
+  await page.getByTestId('export-button').click();
+  const download = page.waitForEvent('download');
+  await page.getByTestId('export-csv').click();
+  const file = await download;
+  expect(file.suggestedFilename()).toMatch(/^objetivos-\d{4}-\d{2}\.csv$/);
+  const text = (await (await file.createReadStream()).toArray()).join('');
+  expect(text).toContain('Objetivo;1;2;3');
+  expect(text).toContain('1. Leer;');
+  expect(text).toMatch(/Horas trabajadas;.*1,5/);
+});
+
+test('en el celular, «Hoy» muestra solo la casilla de hoy', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'Solo en el celular.');
+  await goalsWith(page, ['Leer', 'Correr']);
+  await expect(page.getByTestId('goals-today')).toBeVisible();
+  await expect(page.getByTestId('goals-table')).toBeHidden();
+
+  const first = page.locator('[data-testid^="today-check-"]').first();
+  await first.click();
+  await expect(first).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('[data-testid^="today-total-"]').first()).toHaveText(/^1\//);
+
+  const saved = savedHours(page);
+  await page.getByTestId('hours-plus').click();
+  await page.getByTestId('hours-plus').click();
+  await expect(page.getByTestId('hours-today')).toHaveText('1 h');
+  expect((await saved).status()).toBe(200);
+  await expect(page.getByTestId('hours-month-total')).toHaveText('Este mes: 1 h');
+
+  // «Mes» muestra la hoja con la marca de hoy.
+  await page.getByTestId('view-month').click();
+  await expect(page.getByTestId('goals-table')).toBeVisible();
+  await expect(page.locator('[data-testid^="check-"][aria-pressed="true"]')).toHaveCount(1);
 });

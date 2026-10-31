@@ -88,7 +88,7 @@ export function PanelLayout() {
 
   return (
     <div ref={rootRef} data-testid="panel" className="min-h-dvh bg-bg text-text">
-      <div className="flex items-center justify-between px-4 pt-4 md:px-6">
+      <div className="flex items-center justify-between px-4 pt-4 md:px-6 print:hidden">
         <Logo />
         <ThemeSwitch />
       </div>
@@ -98,20 +98,20 @@ export function PanelLayout() {
           <nav
             aria-label="Módulos"
             data-testid="nav-rail"
-            className="glass-panel fixed left-4 top-16 z-40 flex flex-col items-center gap-1 rounded-full p-1.5"
+            className="glass-panel fixed left-4 top-16 z-40 print:hidden flex flex-col items-center gap-1 rounded-full p-1.5"
           >
             {MODULES.map((item) => (
               <RailItem key={item.key} item={item} />
             ))}
           </nav>
-          <div className="fixed bottom-4 left-4 z-40">
+          <div className="fixed bottom-4 left-4 z-40 print:hidden">
             <AccountMenu variant="rail" />
           </div>
         </>
       ) : (
         <nav
           aria-label="Módulos"
-          className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-2.5"
+          className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-2.5 print:hidden"
           style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 10px)' }}
         >
           <div className="glass-panel pointer-events-auto flex w-full items-stretch gap-0.5 rounded-full p-1.5">

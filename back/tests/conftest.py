@@ -33,7 +33,7 @@ def _schema():
 @pytest.fixture(autouse=True)
 def _clean():
     with engine.begin() as conn:
-        conn.execute(text("TRUNCATE goal_checks, goals, users RESTART IDENTITY CASCADE"))
+        conn.execute(text("TRUNCATE work_hours, goal_checks, goals, users RESTART IDENTITY CASCADE"))
     code_login.ghosts.clear()
     yield
 

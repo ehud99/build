@@ -19,7 +19,8 @@ suyo (`user_id`). Backend **FastAPI + SQLAlchemy + PostgreSQL + Alembic** en `ba
 v1: inicio público y Dashboard «En desarrollo»; registro con clave de invitación; login de dos
 pantallas; Objetivos del mes (hasta 10, solo se marca hoy, meses pasados de solo lectura, «Copiar
 mes anterior», rachas por casilla y la fila en llamas del mes completo, recomendaciones en el
-campo del objetivo nuevo); tema claro y oscuro con efecto glitch (`front/src/lib/glitch.js`).
+campo del objetivo nuevo, horas trabajadas por día, vista «Hoy» en el celular y exportar a
+Excel o PDF); tema claro y oscuro con efecto glitch (`front/src/lib/glitch.js`).
 
 ## Skills del proyecto
 

@@ -1,11 +1,16 @@
-import { Check, ChevronLeft, ChevronRight, Flame, Lock, Plus, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Check, ChevronLeft, ChevronRight, Lock, Plus, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
 import { apiError } from '@/lib/api.js';
 import * as goalsApi from './api.js';
-import { goalPlaceholder } from './placeholders.js';
+import { ExportMenu } from './ExportMenu.jsx';
+import { csvFileName, downloadText, monthCsv } from './exportMonth.js';
+import { AddGoalInput, GoalTitleInput, StreakBadge } from './GoalParts.jsx';
+import { formatHours, halvesText, toHalves } from './hours.js';
+import { HoursStepper } from './HoursStepper.jsx';
+import { TodayView } from './TodayView.jsx';
 import {
   currentStreak,
   dayScore,
@@ -21,96 +26,30 @@ import {
 } from './score.js';
 
 const MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
+const PHONE_QUERY = '(max-width: 767px)';
+const HOURS_SAVE_MS = 450;
 
-/** Título de un objetivo: se edita en el sitio y guarda al salir si cambió. */
-function GoalTitleInput({ goal, disabled, onCommit }) {
-  const [value, setValue] = useState(goal.title);
-
-  const commit = () => {
-    const next = value.trim();
-    if (!next || next === goal.title) {
-      setValue(goal.title);
-      return;
-    }
-    onCommit(goal, next);
-  };
-
-  return (
-    <input
-      value={value}
-      onChange={(e) => setValue(e.target.value)}
-      onBlur={commit}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') e.currentTarget.blur();
-        if (e.key === 'Escape') {
-          setValue(goal.title);
-          e.currentTarget.blur();
-        }
-      }}
-      readOnly={disabled}
-      maxLength={80}
-      size={1}
-      title={value}
-      aria-label={`Título del objetivo ${goal.position + 1}`}
-      data-testid={`goal-title-${goal.id}`}
-      className="min-w-0 flex-1 truncate rounded bg-transparent px-1 py-0.5 text-sm text-text outline-none focus:bg-surface-2 focus:ring-1 focus:ring-accent read-only:cursor-default"
-    />
+/** `true` en el celular (< 768 px, como la barra del panel). */
+function useIsPhone() {
+  return useSyncExternalStore(
+    (cb) => {
+      const mq = window.matchMedia(PHONE_QUERY);
+      mq.addEventListener('change', cb);
+      return () => mq.removeEventListener('change', cb);
+    },
+    () => window.matchMedia(PHONE_QUERY).matches,
+    () => false,
   );
 }
 
-/**
- * Fila para escribir un objetivo nuevo: Enter guarda, Escape cancela. El placeholder recomienda
- * un objetivo según cuántos hay (`count`, `placeholders.js`); se elige una vez al abrirse.
- */
-function AddGoalInput({ count, onSubmit, onCancel }) {
-  const [title, setTitle] = useState('');
-  const [placeholder] = useState(() => goalPlaceholder(count));
-  const ref = useRef(null);
-  useEffect(() => ref.current?.focus(), []);
-  return (
-    <div className="flex w-full max-w-sm flex-col gap-1">
-    <input
-      ref={ref}
-      value={title}
-      onChange={(e) => setTitle(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') {
-          const t = title.trim();
-          if (t) onSubmit(t);
-        } else if (e.key === 'Escape') onCancel();
-      }}
-      maxLength={80}
-      placeholder={placeholder}
-      aria-label="Nuevo objetivo"
-      data-testid="goal-add-input"
-      className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
-    />
-    <p className="px-1 text-left text-xs text-text-faint">Enter para guardar · Esc para cancelar</p>
-    </div>
-  );
-}
-
-/** Contador de la racha junto al título: la llama y los días seguidos. */
-function StreakBadge({ goal, days, onFire }) {
-  if (days < 2 && !onFire) return null;
-  const label = onFire ? `¡Mes completo! Racha de ${days} días` : `Racha de ${days} días`;
-  return (
-    <span
-      className="streak-badge inline-flex shrink-0 items-center gap-0.5 text-xs font-semibold tabular-nums"
-      data-level={streakLevel(days)}
-      title={label}
-      aria-label={label}
-      data-testid={`goal-streak-${goal.id}`}
-    >
-      <Flame className="h-3.5 w-3.5" aria-hidden="true" />
-      {days}
-    </span>
-  );
-}
+/** Total del mes con las horas de cada día (texto), sumado en medias horas. */
+const sumHours = (hours) => halvesText(Object.values(hours ?? {}).reduce((n, h) => n + toHalves(h), 0));
 
 /**
  * Objetivos del mes: la hoja de seguimiento (filas de objetivos, una columna por día, T y el
- * puntaje del día). Solo se marca el día de hoy; los meses pasados son de solo lectura.
+ * puntaje del día, con la fila de horas trabajadas). Solo se marca el día de hoy; los meses pasados
+ * son de solo lectura. En el celular, el mes actual abre en «Hoy» (`TodayView`: solo los objetivos
+ * y la casilla de hoy); «Mes» muestra la hoja. «Exportar» baja un CSV o imprime la hoja.
  */
 export default function GoalsPage() {
   const [params, setParams] = useSearchParams();
@@ -122,6 +61,9 @@ export default function GoalsPage() {
   const [busy, setBusy] = useState(false);
   const requestId = useRef(0);
   const tableRef = useRef(null);
+  const hoursTimer = useRef(null);
+  const phone = useIsPhone();
+  const [view, setView] = useState('hoy');
 
   const showError = useCallback((e) => setError(apiError(e).message), []);
 
@@ -202,6 +144,36 @@ export default function GoalsPage() {
     }
   };
 
+  const loadAgain = useCallback(() => {
+    const id = ++requestId.current;
+    goalsApi.fetchMonth(requested).then((month) => id === requestId.current && setData(month), () => {});
+  }, [requested]);
+
+  // Horas de hoy: se ven al instante y se guardan cuando se deja de tocar (`HOURS_SAVE_MS`).
+  const changeHours = (text) => {
+    if (today == null) return;
+    setError(null);
+    setData((d) => {
+      if (!d) return d;
+      const work = { ...d.work_hours, [today]: text };
+      if (!toHalves(text)) delete work[today];
+      return { ...d, work_hours: work, total_hours: sumHours(work) };
+    });
+    window.clearTimeout(hoursTimer.current);
+    hoursTimer.current = window.setTimeout(async () => {
+      try {
+        const saved = await goalsApi.setWorkHours(today, text);
+        setData((d) => (d && d.month === saved.month ? { ...d, total_hours: saved.total_hours } : d));
+      } catch (e) {
+        showError(e);
+        loadAgain();
+      }
+    }, HOURS_SAVE_MS);
+  };
+  useEffect(() => () => window.clearTimeout(hoursTimer.current), []);
+
+  const exportCsv = () => data && downloadText(monthCsv(data), csvFileName(data.month));
+
   const copy = async () => {
     setError(null);
     setBusy(true);
@@ -230,6 +202,10 @@ export default function GoalsPage() {
   const [monthName, year] = month && MONTH_RE.test(month) ? monthLabel(month).split(' ') : ['', ''];
   const empty = data && goals.length === 0;
   const canAdd = editable && goals.length < maxGoals;
+  const workHours = data?.work_hours ?? {};
+  const todayHours = today != null ? workHours[today] ?? '0' : '0';
+  const canToday = phone && today != null && !empty && Boolean(data);
+  const todayMode = canToday && view === 'hoy';
 
   const arrow =
     'flex h-9 w-9 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-surface-2 hover:text-text focus-visible:outline-2 focus-visible:outline-accent';
@@ -238,6 +214,7 @@ export default function GoalsPage() {
   return (
     <>
       <PageHeader title="Objetivos" subtitle="Los objetivos del mes">
+        <ExportMenu onCsv={exportCsv} onPrint={() => window.print()} disabled={!data || empty} />
         <div className="text-right">
           <p className="text-xs uppercase tracking-wide text-text-muted">Puntaje final</p>
           <p className="text-xl font-semibold tabular-nums" data-testid="final-score">
@@ -247,20 +224,20 @@ export default function GoalsPage() {
       </PageHeader>
 
       <div className="mb-4 flex items-center justify-center gap-3">
-        <button type="button" onClick={() => go(-1)} disabled={!month} aria-label="Mes anterior" data-testid="month-prev" className={arrow}>
+        <button type="button" onClick={() => go(-1)} disabled={!month} aria-label="Mes anterior" data-testid="month-prev" className={`${arrow} print:hidden`}>
           <ChevronLeft className="h-5 w-5" aria-hidden="true" />
         </button>
         <div className="min-w-44 text-center" data-testid="month-label">
           <span className="text-3xl font-bold uppercase tracking-wide sm:text-4xl">{monthName}</span>{' '}
           <span className="text-sm text-text-muted">{year}</span>
         </div>
-        <button type="button" onClick={() => go(1)} disabled={!month} aria-label="Mes siguiente" data-testid="month-next" className={arrow}>
+        <button type="button" onClick={() => go(1)} disabled={!month} aria-label="Mes siguiente" data-testid="month-next" className={`${arrow} print:hidden`}>
           <ChevronRight className="h-5 w-5" aria-hidden="true" />
         </button>
       </div>
 
       {error ? (
-        <p role="alert" data-testid="goals-error" className="mb-3 rounded-xl border border-danger/40 bg-surface px-3 py-2 text-sm text-danger">
+        <p role="alert" data-testid="goals-error" className="mb-3 print:hidden rounded-xl border border-danger/40 bg-surface px-3 py-2 text-sm text-danger">
           {error}
         </p>
       ) : null}
@@ -294,9 +271,45 @@ export default function GoalsPage() {
         </div>
       ) : null}
 
+      {canToday ? (
+        <div className="mb-3 flex justify-center print:hidden">
+          <div className="inline-flex rounded-full bg-surface-2 p-1" role="group" aria-label="Vista">
+            {[
+              ['hoy', 'Hoy'],
+              ['mes', 'Mes'],
+            ].map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setView(key)}
+                aria-pressed={view === key}
+                data-testid={`view-${key === 'hoy' ? 'today' : 'month'}`}
+                className={`rounded-full px-5 py-1.5 text-sm font-medium transition-colors ${
+                  view === key ? 'bg-surface text-text shadow-sm' : 'text-text-muted'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {todayMode ? (
+        <TodayView
+          data={data}
+          today={today}
+          editable={editable}
+          onToggle={toggle}
+          onRename={rename}
+          hours={todayHours}
+          onHours={changeHours}
+        />
+      ) : null}
+
       {data && !empty ? (
         <>
-          <div ref={tableRef} className="overflow-x-auto rounded-2xl border border-border bg-surface" data-testid="goals-table">
+          <div ref={tableRef} className={`${todayMode ? 'hidden print:block' : ''} overflow-x-auto print:overflow-visible rounded-2xl border border-border bg-surface`} data-testid="goals-table">
             <table className="w-full border-collapse text-xs">
               <thead>
                 <tr>
@@ -329,7 +342,7 @@ export default function GoalsPage() {
                         <GoalTitleInput key={goal.title} goal={goal} disabled={!editable} onCommit={rename} />
                         <StreakBadge goal={goal} days={streakNow} onFire={onFire} />
                         {editable ? (
-                          <button type="button" onClick={() => remove(goal)} aria-label={`Borrar «${goal.title}»`} title="Borrar" data-testid={`goal-delete-${goal.id}`} className="shrink-0 rounded p-1 text-text-faint hover:text-danger focus-visible:outline-2 focus-visible:outline-accent">
+                          <button type="button" onClick={() => remove(goal)} aria-label={`Borrar «${goal.title}»`} title="Borrar" data-testid={`goal-delete-${goal.id}`} className="print:hidden shrink-0 rounded p-1 text-text-faint hover:text-danger focus-visible:outline-2 focus-visible:outline-accent">
                             <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                           </button>
                         ) : null}
@@ -376,7 +389,24 @@ export default function GoalsPage() {
                 })}
               </tbody>
               <tfoot>
-                <tr className="border-t border-border-strong">
+                <tr className="border-t border-border-strong" data-testid="hours-row">
+                  <th scope="row" className="sticky left-0 z-10 bg-surface-2 px-2 py-1.5 text-left text-xs font-semibold uppercase tracking-wide">
+                    Horas trabajadas
+                  </th>
+                  {days.map((d) => (
+                    <td
+                      key={d}
+                      className={`${cell} tabular-nums ${d === today ? 'bg-accent-soft font-semibold text-accent' : 'bg-surface-2 text-text-muted'}`}
+                      data-testid={`hours-${d}`}
+                    >
+                      {formatHours(workHours[d])}
+                    </td>
+                  ))}
+                  <td className={`${cell} bg-surface-3 font-semibold tabular-nums`} data-testid="hours-total">
+                    {formatHours(data.total_hours) || 0}
+                  </td>
+                </tr>
+                <tr className="border-t border-border">
                   <th scope="row" className="sticky left-0 z-10 bg-surface-3 px-2 py-1.5 text-left text-xs font-semibold uppercase tracking-wide">
                     Puntaje del día
                   </th>
@@ -391,7 +421,8 @@ export default function GoalsPage() {
             </table>
           </div>
 
-          <div className="mt-3">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 print:hidden">
+            <div>
             {!editable ? null : goals.length >= maxGoals ? (
               <p className="text-sm text-text-muted">Máximo {maxGoals} objetivos</p>
             ) : adding ? (
@@ -400,6 +431,13 @@ export default function GoalsPage() {
               <button type="button" onClick={() => setAdding(true)} data-testid="goal-add" className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-4 py-2 text-sm hover:bg-surface-3 focus-visible:outline-2 focus-visible:outline-accent">
                 <Plus className="h-4 w-4" aria-hidden="true" /> Añadir
               </button>
+            ) : null}
+            </div>
+            {today != null && editable && !todayMode ? (
+              <div className="flex items-center gap-3" data-testid="hours-editor">
+                <span className="text-sm text-text-muted">Horas trabajadas hoy</span>
+                <HoursStepper value={todayHours} onChange={changeHours} />
+              </div>
             ) : null}
           </div>
         </>

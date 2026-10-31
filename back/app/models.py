@@ -4,11 +4,14 @@ Tablas. Sin empresas ni membresías: cada usuario ve solo lo suyo (`user_id`).
 - `users`: la cuenta, con su código de acceso (6 caracteres, bcrypt) y el conteo de fallos del login.
 - `goals`: un objetivo de un mes (`month` = 'YYYY-MM'), en el orden de `position`.
 - `goal_checks`: un día cumplido de un objetivo.
+- `work_hours`: las horas trabajadas de un día (la fila «Horas trabajadas» de la hoja; para el
+  dashboard).
 """
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Optional
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, UniqueConstraint, func
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -52,3 +55,14 @@ class GoalCheck(Base):
     day: Mapped[date] = mapped_column(Date)
 
     goal: Mapped[Goal] = relationship(back_populates="checks")
+
+
+class WorkHours(Base):
+    __tablename__ = "work_hours"
+    __table_args__ = (UniqueConstraint("user_id", "day", name="ux_work_hours_user_day"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    day: Mapped[date] = mapped_column(Date)
+    # Horas en pasos de media hora (0,5 a 24). Decimal, nunca float.
+    hours: Mapped[Decimal] = mapped_column(Numeric(4, 1))

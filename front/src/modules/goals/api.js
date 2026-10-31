@@ -36,3 +36,9 @@ export async function copyPrevious(month) {
   const { data } = await api.post('/goals/copy-previous', { month });
   return data;
 }
+
+/** Horas trabajadas de hoy (`'8.5'`; `'0'` las borra). Devuelve `{month, day, hours, total_hours}`. */
+export async function setWorkHours(day, hours) {
+  const { data } = await api.put(`/goals/work-hours/${day}`, { hours });
+  return data;
+}
