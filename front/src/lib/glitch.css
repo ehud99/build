@@ -1,0 +1,41 @@
+/*
+ * Cambio de tema con glitch (`lib/glitch.js`). Solo mientras dura (`html.glitch-vt`):
+ * sin el fundido por defecto de la View Transition, la vista nueva encima de la vieja
+ * (revelada por el `clip-path` que anima el script) y la estática encima de todo.
+ */
+html.glitch-vt::view-transition-group(*),
+html.glitch-vt::view-transition-old(*),
+html.glitch-vt::view-transition-new(*) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+html.glitch-vt::view-transition-old(root) { z-index: 1; }
+html.glitch-vt::view-transition-new(root) { z-index: 2; }
+html.glitch-vt::view-transition-group(glitch-noise) { z-index: 3; }
+
+/*
+ * La capa de estática: solo existe en la vista nueva (se agrega dentro de `commit`) y
+ * esa vista es en vivo, así el script anima el elemento mismo (opacidad y
+ * `background-position` a saltos) y termina en opacidad 0: no se ve ni un cuadro
+ * entre el final de la transición y su retiro.
+ */
+.glitch-noise {
+  position: fixed;
+  inset: 0;
+  opacity: 0;
+  z-index: 2147483647;
+  pointer-events: none;
+  background-repeat: repeat;
+  background-size: 384px 384px;
+  image-rendering: pixelated;
+  view-transition-name: glitch-noise;
+}
+
+/* Las definiciones de los filtros: sin caja. */
+.glitch-defs {
+  position: fixed;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
