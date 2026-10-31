@@ -1,7 +1,7 @@
 {
   "name": "real-front",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.5.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,10 +9,15 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "test": "node --test \"src/**/*.test.js\"",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "fonts:excalidraw": "node scripts/copy-excalidraw-fonts.mjs",
+    "postinstall": "npm run fonts:excalidraw",
+    "predev": "npm run fonts:excalidraw",
+    "prebuild": "npm run fonts:excalidraw"
   },
   "dependencies": {
     "@blobatar/react": "2.7.0",
+    "@excalidraw/excalidraw": "0.18.1",
     "@tiptap/extension-placeholder": "3.32.0",
     "@tiptap/extension-task-item": "3.32.0",
     "@tiptap/extension-task-list": "3.32.0",

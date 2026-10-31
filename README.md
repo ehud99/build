@@ -35,6 +35,9 @@ objetivos del mes en una hoja (marca el día de hoy, ve el puntaje del día y el
    npm run dev
    ```
 
+   `npm install` también copia las fuentes de la pizarra (Excalidraw) a `public/excalidraw/fonts`
+   (`npm run fonts:excalidraw`; no van en git).
+
    Abrir http://127.0.0.1:5200 y crear la cuenta en «Crear cuenta» con la clave de `INVITE_CODE`.
 
 ## Pruebas

@@ -7,6 +7,7 @@ from app.modules.auth.router import router as auth_router
 from app.modules.finance.router import router as finance_router
 from app.modules.goals.router import router as goals_router
 from app.modules.notes.router import router as notes_router
+from app.modules.whiteboard.router import router as whiteboard_router
 
 app = FastAPI(title="Real", docs_url="/api/docs", openapi_url="/api/openapi.json")
 
@@ -17,6 +18,7 @@ app.include_router(auth_router)
 app.include_router(goals_router)
 app.include_router(notes_router)
 app.include_router(finance_router)
+app.include_router(whiteboard_router)
 
 
 @app.get("/api/health")

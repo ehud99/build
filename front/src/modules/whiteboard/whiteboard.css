@@ -1,0 +1,69 @@
+/* ===================================================================
+   Pizarra (docs/contrato-pizarra.md): el marco del editor dentro del
+   panel, las miniaturas en claro y oscuro y Excalidraw con el acento de
+   la app. Solo tokens del tema.
+   =================================================================== */
+
+:root {
+  --wb-scrim: oklch(0.22 0.01 80 / 0.34);
+  /* El mismo filtro con el que Excalidraw pasa el lienzo a oscuro. */
+  --wb-thumb-filter: none;
+}
+
+@media screen {
+  :root[data-theme="dark"] {
+    --wb-scrim: oklch(0.05 0.005 80 / 0.62);
+    --wb-thumb-filter: invert(93%) hue-rotate(180deg);
+  }
+}
+
+.wb-scrim { background: var(--wb-scrim); }
+
+/* Miniaturas: siempre se generan en claro; en oscuro se invierten como el lienzo. */
+.wb-thumb-box {
+  background-color: var(--surface);
+  background-image: radial-gradient(color-mix(in oklch, var(--text) 10%, transparent) 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+.wb-thumb { filter: var(--wb-thumb-filter); }
+.wb-card { transition: box-shadow 150ms ease, border-color 150ms ease; }
+.wb-card:hover { box-shadow: var(--shadow-md); border-color: var(--border-strong); }
+
+/*
+ * El editor ocupa el alto disponible del panel sin tapar sus barras: debajo de la fila del logo,
+ * a la derecha de la barra de módulos en PC (fija en `left-4`, ~56 px de ancho) y encima de la
+ * barra flotante de abajo en el celular (~72 px más el área segura).
+ */
+.wb-editor-frame {
+  position: fixed;
+  z-index: 30;
+  top: 60px;
+  left: 8px;
+  right: 8px;
+  bottom: calc(env(safe-area-inset-bottom) + 84px);
+}
+@media (min-width: 768px) {
+  .wb-editor-frame {
+    left: 88px;
+    right: 16px;
+    bottom: 16px;
+  }
+}
+
+.wb-canvas { background: var(--surface); }
+
+/* Excalidraw con el acento y la tipografía de la app, en claro y en oscuro. */
+.wb-canvas .excalidraw,
+.wb-canvas .excalidraw.theme--dark {
+  --color-primary: var(--accent);
+  --color-primary-darker: color-mix(in oklch, var(--accent) 86%, var(--text));
+  --color-primary-darkest: color-mix(in oklch, var(--accent) 74%, var(--text));
+  --color-primary-hover: color-mix(in oklch, var(--accent) 90%, var(--text));
+  --color-primary-light: var(--accent-soft);
+  --color-primary-light-darker: color-mix(in oklch, var(--accent-soft) 85%, var(--accent));
+  --color-surface-primary-container: var(--accent-soft);
+  --ui-font: var(--font-sans);
+}
+
+/* Sin páginas incrustadas: el servidor no las acepta (cargarían sitios ajenos). */
+.wb-canvas [data-testid="toolbar-embeddable"] { display: none !important; }

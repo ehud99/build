@@ -136,9 +136,10 @@ una probabilidad de 5 % sale «Tomar agua». Se elige una vez al abrir el campo.
 | `/objetivos` | Panel › Objetivos: el calendario del mes (`?mes=YYYY-MM`). En el celular (< 768 px) el mes actual abre en **Hoy** (`TodayView`: solo los objetivos con la casilla de hoy grande, su racha y su T, y las horas de hoy) y **Mes** muestra la hoja. **Exportar**: Excel (CSV con `;`, coma decimal y BOM, `objetivos-YYYY-MM.csv`) o «Imprimir o PDF» (la hoja completa, horizontal y siempre en claro) |
 | `/notas` | Panel › Notas: cards tipo Google Keep y editor tipo Notas del iPhone (`docs/contrato-notas.md`) |
 | `/finanzas` | Panel › Finanzas: gastos e ingresos como «Gestor de gastos» (`docs/contrato-finanzas.md`) |
+| `/pizarra` | Panel › Pizarra: pizarras con Excalidraw; el editor en `/pizarra?id=N` (`docs/contrato-pizarra.md`) |
 
 Panel: barra de íconos de vidrio a la izquierda en PC, justo debajo del logo como en forge
-(Inicio `House`, Objetivos `CalendarDays`, Notas `NotebookPen`, Finanzas `Wallet`), y abajo en el celular; arriba el logo «Real» y el selector «Claro | Oscuro»; abajo a la
+(Inicio `House`, Objetivos `CalendarDays`, Notas `NotebookPen`, Finanzas `Wallet`, Pizarra `PenTool`), y abajo en el celular; arriba el logo «Real» y el selector «Claro | Oscuro»; abajo a la
 izquierda el blobatar de la cuenta con su menú (nombre, @usuario, «Cerrar sesión»).
 
 ## Cambio de tema con glitch

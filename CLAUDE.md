@@ -14,6 +14,7 @@ suyo (`user_id`). Backend **FastAPI + SQLAlchemy + PostgreSQL + Alembic** en `ba
 | [`docs/contrato.md`](docs/contrato.md) | API, errores, reglas de cuentas y objetivos, rutas del frontend, glitch, módulos |
 | [`docs/contrato-notas.md`](docs/contrato-notas.md) | Notas: cards tipo Google Keep, editor tipo Notas del iPhone (Tiptap, JSON validado) |
 | [`docs/contrato-finanzas.md`](docs/contrato-finanzas.md) | Finanzas: gastos e ingresos como «Gestor de gastos», categorías, balance, montos en `Decimal` |
+| [`docs/contrato-pizarra.md`](docs/contrato-pizarra.md) | Pizarra: Excalidraw, escena validada (sin `embeddable`/`iframe`, imágenes sin SVG), miniaturas, topes |
 | [`README.md`](README.md) | Cómo correr y probar en local |
 
 ## Estado
@@ -22,7 +23,8 @@ v1: inicio público y Dashboard «En desarrollo»; registro con clave de invitac
 pantallas; Objetivos del mes (hasta 10, solo se marca hoy, meses pasados de solo lectura, «Copiar
 mes anterior», rachas por casilla y la fila en llamas del mes completo, recomendaciones en el
 campo del objetivo nuevo, horas trabajadas por día, vista «Hoy» en el celular y exportar a
-Excel o PDF); Notas (`/notas`) y Finanzas (`/finanzas`); logo en pixel art de un Cthulhu con alas
+Excel o PDF); Notas (`/notas`), Finanzas (`/finanzas`) y Pizarra (`/pizarra`, Excalidraw; sus fuentes las copia
+`front/scripts/copy-excalidraw-fonts.mjs` a `public/excalidraw/fonts`, fuera de git); logo en pixel art de un Cthulhu con alas
 (`front/src/components/brand/RealLogo.jsx`, colores `--logo-*`); tema claro y oscuro con efecto glitch (`front/src/lib/glitch.js`).
 
 ## Skills del proyecto

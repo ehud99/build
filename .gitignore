@@ -11,3 +11,6 @@ dist/
 front/.env*
 test-results/
 playwright-report/
+
+# Fuentes de Excalidraw: las copia scripts/copy-excalidraw-fonts.mjs
+front/public/excalidraw/fonts/
