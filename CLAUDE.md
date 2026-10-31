@@ -12,6 +12,8 @@ suyo (`user_id`). Backend **FastAPI + SQLAlchemy + PostgreSQL + Alembic** en `ba
 | Archivo | Contenido |
 |---|---|
 | [`docs/contrato.md`](docs/contrato.md) | API, errores, reglas de cuentas y objetivos, rutas del frontend, glitch, módulos |
+| [`docs/contrato-notas.md`](docs/contrato-notas.md) | Notas: cards tipo Google Keep, editor tipo Notas del iPhone (Tiptap, JSON validado) |
+| [`docs/contrato-finanzas.md`](docs/contrato-finanzas.md) | Finanzas: gastos e ingresos como «Gestor de gastos», categorías, balance, montos en `Decimal` |
 | [`README.md`](README.md) | Cómo correr y probar en local |
 
 ## Estado
@@ -20,7 +22,8 @@ v1: inicio público y Dashboard «En desarrollo»; registro con clave de invitac
 pantallas; Objetivos del mes (hasta 10, solo se marca hoy, meses pasados de solo lectura, «Copiar
 mes anterior», rachas por casilla y la fila en llamas del mes completo, recomendaciones en el
 campo del objetivo nuevo, horas trabajadas por día, vista «Hoy» en el celular y exportar a
-Excel o PDF); tema claro y oscuro con efecto glitch (`front/src/lib/glitch.js`).
+Excel o PDF); Notas (`/notas`) y Finanzas (`/finanzas`); logo en pixel art de un Cthulhu con alas
+(`front/src/components/brand/RealLogo.jsx`, colores `--logo-*`); tema claro y oscuro con efecto glitch (`front/src/lib/glitch.js`).
 
 ## Skills del proyecto
 
@@ -28,8 +31,8 @@ Excel o PDF); tema claro y oscuro con efecto glitch (`front/src/lib/glitch.js`).
 - `/real-suite`: la suite completa (pytest, unitarias, lint y Playwright) antes de desplegar
   (`.claude/skills/real-suite/`).
 
-Próximos módulos: notas, tareas (probablemente junto al calendario), finanzas y un dashboard con
-los datos de todo.
+Próximos módulos: tareas (probablemente junto al calendario) y un dashboard con los datos de todo
+(horas trabajadas, finanzas…).
 
 ## Reglas
 

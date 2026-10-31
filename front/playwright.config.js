@@ -11,8 +11,9 @@ import { defineConfig, devices } from '@playwright/test';
  * Requisitos: PostgreSQL en `E2E_DATABASE_URL` (por defecto el local de `docker-compose.yml`) y
  * el entorno de Python en `back/.venv`.
  */
-const API_PORT = 8030;
-const WEB_PORT = 5201;
+// Puertos propios con `E2E_API_PORT` / `E2E_WEB_PORT` (para correr dos suites a la vez).
+const API_PORT = Number(process.env.E2E_API_PORT || 8030);
+const WEB_PORT = Number(process.env.E2E_WEB_PORT || 5201);
 export const E2E_INVITE = 'e2e-invite';
 const DATABASE_URL =
   process.env.E2E_DATABASE_URL || 'postgresql+psycopg2://postgres:postgres@localhost:5432/build_e2e';

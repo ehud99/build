@@ -33,7 +33,9 @@ def _schema():
 @pytest.fixture(autouse=True)
 def _clean():
     with engine.begin() as conn:
-        conn.execute(text("TRUNCATE work_hours, goal_checks, goals, users RESTART IDENTITY CASCADE"))
+        # Todas las tablas de todos los módulos (cada módulo registra las suyas en Base.metadata).
+        tables = ", ".join(f'"{t.name}"' for t in Base.metadata.sorted_tables)
+        conn.execute(text(f"TRUNCATE {tables} RESTART IDENTITY CASCADE"))
     code_login.ghosts.clear()
     yield
 

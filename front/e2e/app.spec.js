@@ -1,41 +1,18 @@
 import { expect, test } from '@playwright/test';
 
+import { CODE, registerUser, typeCode, unique } from './helpers.js';
+
 /**
  * El recorrido completo contra el backend real (playwright.config.js): registro con la clave de
  * invitación, panel, objetivos del mes (añadir, marcar hoy, puntajes, renombrar, borrar), tema,
  * salir y volver a entrar con el código, y el bloqueo tras 3 fallos.
  */
 
-const INVITE = 'e2e-invite';
-const CODE = 'Ab12-!';
-
-const unique = () => `e2e_${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
-
-async function typeCode(page, prefix, code) {
-  await page.getByTestId(`${prefix}-0`).click();
-  await page.keyboard.type(code);
-}
-
 /** En el celular el mes actual abre en «Hoy»: pasa a la hoja del mes (espera a que cargue). */
 async function showMonth(page) {
   await expect(page.getByTestId('goals-table')).toBeAttached();
   if (await page.getByTestId('view-month').isVisible()) await page.getByTestId('view-month').click();
   await expect(page.getByTestId('goals-table')).toBeVisible();
-}
-
-async function registerUser(page, username, name = 'Prueba') {
-  await page.goto('/registro');
-  await page.getByTestId('register-invite').fill(INVITE);
-  await page.getByTestId('register-next').click();
-  await page.getByTestId('register-name').fill(name);
-  await page.getByTestId('register-next').click();
-  await page.getByTestId('register-username').fill(username);
-  await page.getByTestId('register-next').click();
-  await typeCode(page, 'register-code', CODE);
-  await page.getByTestId('register-next').click();
-  await typeCode(page, 'register-confirm', CODE);
-  await page.getByTestId('register-next').click();
-  await expect(page).toHaveURL(/\/inicio$/);
 }
 
 test('inicio público en desarrollo y enlaces de entrada', async ({ page }) => {

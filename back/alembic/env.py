@@ -3,7 +3,9 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import create_engine
 
-from app import models  # noqa: F401  (registra las tablas en Base.metadata)
+# Registra en Base.metadata las tablas de todos los módulos: `app.main` incluye cada router, y cada
+# router importa sus modelos (`app/models.py` y `app/modules/<clave>/models.py`).
+import app.main  # noqa: F401
 from app.config import settings
 from app.db import Base
 

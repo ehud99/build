@@ -1,5 +1,5 @@
 import { lazy } from 'react';
-import { CalendarDays, House } from 'lucide-react';
+import { CalendarDays, House, NotebookPen, Wallet } from 'lucide-react';
 
 /**
  * Los módulos del panel, en el orden de la barra. Agregar uno (notas, tareas, finanzas…) es una
@@ -26,6 +26,20 @@ export const MODULES = [
     label: 'Objetivos',
     icon: CalendarDays,
     Page: lazy(() => import('./goals/GoalsPage.jsx')),
+  },
+  {
+    key: 'notes',
+    path: '/notas',
+    label: 'Notas',
+    icon: NotebookPen,
+    Page: lazy(() => import('./notes/NotesPage.jsx')),
+  },
+  {
+    key: 'finance',
+    path: '/finanzas',
+    label: 'Finanzas',
+    icon: Wallet,
+    Page: lazy(() => import('./finance/FinancePage.jsx')),
   },
 ];
 
